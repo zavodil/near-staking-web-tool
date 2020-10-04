@@ -1,0 +1,4 @@
+.idea/
+contract/src/lib.rs
+src/test.js
+src/test-setup.js
