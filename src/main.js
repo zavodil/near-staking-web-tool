@@ -187,6 +187,7 @@ if(queryString.includes("pools")){
 
     window.table = $('#view-pools-table').DataTable({
         destroy: true,
+        pageLength: 100,
         columnDefs: [
             {
                 targets: 1, render: function (data) {
