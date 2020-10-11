@@ -10,6 +10,41 @@ $(document).on('input', '#near-amount', function () {
     updateNearAmountHint();
 });
 
+$(document).on('mouseenter', 'td.col-status', function (e) {
+    const on = e.target.innerHTML.includes("green");
+    $(this).tooltip({placement: 'bottom', title: "Mainnet status: " + (on ? 'ACTIVE' : 'DISABLED')});
+}).on('mouseenter', 'td.col-stake', function (e) {
+    let percent = $(e.target).attr("data-percent");
+    if(percent)
+        $(this).tooltip({placement: 'bottom', title: percent + "% of total stake"});
+}).on('mouseenter', 'td.col-phase-2-vote', function (e) {
+    const on = e.target.innerHTML.includes("green");
+    $(this).tooltip({
+        placement: 'bottom',
+        title: on ? 'VOTED to unlock token transfers' : "Doesn't support token transfers unlock"
+    });
+}).on('mouseenter', '.col-number-of-accounts', function (e) {
+    $(this).tooltip({
+        placement: 'bottom',
+        title: "Number of delegators"
+    });
+}).on('mouseenter', '.th-phase-2-vote', function (e) {
+    $(this).tooltip({
+        placement: 'bottom',
+        title: "Phase 2 vote"
+    });
+}).on('mouseenter', 'th.col-status', function (e) {
+    $(this).tooltip({
+        placement: 'bottom',
+        title: "Mainnet status"
+    });
+});
+
+
+
+
+
+
 document.querySelector('#sign-in').addEventListener('click', () => {
     if (window.lockupAccountId)
         walletConnection.requestSignIn(window.lockupAccountId, 'Near Staking');
@@ -81,7 +116,7 @@ document.querySelector('#load-account').addEventListener('click', () => {
 
             let t1 = window.contract.get_balance({}).then((lockupAmount) => {
                 let t2 = window.contract.get_known_deposited_balance({}).then((lockupDepositedAmount) => {
-                    const remainingAmount = Math.max(0, (Number(lockupAmount) / NearCoef) - (Number(lockupDepositedAmount) / NearCoef) - 35);
+                    const remainingAmount = Math.max(0, (Number(lockupAmount) / NearCoef) - (Number(lockupDepositedAmount) / NearCoef) - 36);
                     const totalAmountFormatted = nearAPI.utils.format.formatNearAmount(lockupAmount.toString(), 2);
                     const depositedAmountFormatted = nearAPI.utils.format.formatNearAmount(lockupDepositedAmount.toString(), 2);
                     document.querySelector('#near-amount').value = remainingAmount;
@@ -131,13 +166,13 @@ document.querySelector('#load-account').addEventListener('click', () => {
                                 },
                                 order: [[6, 'desc']],
                                 columns: [
-                                    {"data": null, defaultContent: ''},
-                                    {"data": "account_id"},
-                                    {"data": "numerator"},
-                                    {"data": "number_of_accounts"},
-                                    {"data": "vote"},
-                                    {"data": "stake"},
-                                    {"data": "stake", visible: false}
+                                    {data: null, defaultContent: ''},
+                                    {data: "account_id"},
+                                    {data: "numerator"},
+                                    {data: "number_of_accounts"},
+                                    {data: "vote"},
+                                    {data: "stake"},
+                                    {data: "stake", visible: false}
                                 ],
                                 ajax: "pools.txt",
                                 createdRow: function (row, data, dataIndex) {
@@ -169,6 +204,9 @@ document.querySelector('#load-account').addEventListener('click', () => {
             });
         }).catch(e => {
             document.querySelector('#lockup-account-not-found').classList.remove('hidden');
+            document.querySelector('#lockup-amount-block').classList.add('hidden');
+            document.querySelector('#existing-staking-pool-block').classList.add('hidden');
+            document.querySelector('#create-delegation-block').classList.add('hidden');
         });
     });
 
@@ -181,55 +219,242 @@ document.querySelector('#load-account').addEventListener('click', () => {
 });
 
 const queryString = window.location.search;
-if(queryString.includes("pools")){
+if (queryString.startsWith("?address=")) {
+    const address = queryString.substr("?address=".length);
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.main').classList.remove('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.add('active');
+
+    document.querySelector('#near-account').value = address;
+    setTimeout(() => {
+        $("#load-account").trigger("click")
+    }, 0);
+} else if (queryString.includes("pools")) {
     document.querySelector('.container.pools').classList.remove('hidden');
     document.querySelector('.container.main').classList.add('hidden');
+    document.querySelector('#nav-pools').classList.add('active');
+    document.querySelector('#nav-main').classList.remove('active');
 
-    window.table = $('#view-pools-table').DataTable({
+    window.pools_table = $('#view-pools-table').DataTable({
         destroy: true,
         pageLength: 100,
+        rowId: "account_id",
+        sortable: true,
         columnDefs: [
+            { "sorting": [ "desc", "asc" ], "targets": [ 5,6,7,8,9,10 ] },
+            { "sorting": [ "asc", "desc" ], "targets": [ 1,4 ] },
             {
-                targets: 1, render: function (data) {
+                targets: 0, render: function (data) {
+                    return `<a data-toggle="modal" data-target="#poolModal" data-pool-id="${data}" href="#">${data}</a>`;
+                },
+            },
+            {
+                targets: 4, render: function (data) {
                     return data + " %";
                 },
-            }
+            },
+            {
+                targets: 6, render: function (data) {
+                    return Number(data) ? `<i class="fa fa-check green" aria-hidden="true"></i>` : `<i class="fa fa-times red" aria-hidden="true"></i>`;
+                },
+            },
+            {
+                targets: 7, render: function (data) {
+                    return `<div class="col-bar">
+                                <div class="cum-stake-number">${Number(data).toLocaleString()} &nbsp;Ⓝ</div>
+                                <div class="cum-bar-wrapper">
+                                    <div class="bar-1"></div>
+                                    <div class="bar-2"></div>
+                                </div>                                
+                            </div>`;
+                },
+            },
+            {
+                targets: 8, render: function (data) {
+                    return Number(data) ? `<i class="fas fa-toggle-on green"></i>` : `<i class="fas fa-toggle-off red"></i>`;
+                },
+            },
+            {"orderable": false, "targets": [1, 2, 3]},
+            {"orderData": 10, "targets": 7},
+            {"orderData": 9, "targets": 6},
+            {"orderData": 11, "targets": 8},
         ],
         select: {
             style: 'os',
             selector: 'td:first-child'
         },
-        order: [[5, 'desc']],
+        order: [[7, 'desc']],
         columns: [
-            {"data": "account_id"},
-            {"data": "numerator"},
-            {"data": "number_of_accounts"},
-            {"data": "vote"},
-            {"data": "stake"},
-            {"data": "stake", visible: false}
+            {data: "account_id", class: "col-pool-name"},
+            {data: "info", defaultContent: ""},
+            {data: "url", defaultContent: ""},
+            {data: "country_code", defaultContent: ""},
+            {data: "numerator", class: "col-fees"},
+            {data: "number_of_accounts", class: "col-number-of-accounts"},
+            {data: "vote", class: "col-phase-2-vote"},
+            {data: "stake", class: "col-stake"},
+            {data: "status", class: "col-status"},
+            {data: "vote_value", visible: false, defaultContent: ""},
+            {data: "stake_value", visible: false, defaultContent: ""},
+            {data: "status_value", visible: false, defaultContent: ""},
+            {data: "stake_percent", visible: false, defaultContent: ""},
+
         ],
-        ajax: "pools.txt",
-        createdRow: function (row, data, dataIndex) {
-            const $dateCell = $(row).find('td:eq(4)');
-            const item = $dateCell.text();
-            $dateCell
-                .data('order', item)
-                .html(Number(item).toLocaleString() + "&nbsp;Ⓝ");
+        ajax: {
+            url: "pools_all.txt",
+            dataSrc: function (json) {
+                if (json.seat_price) {
+                    document.querySelector('#seat-price').classList.remove('hidden');
+                    document.querySelector('#seat-price-value').innerText = Number(json.seat_price).toLocaleString();
+                }
 
-            const $voteCell = $(row).find('td:eq(3)');
-            const vote = $voteCell.text();
-            $voteCell
-                .data('order', Number(data.vote))
-                .html(Number(vote) ? `<i class="fa fa-check green" aria-hidden="true"></i>` : `<i class="fa fa-times red" aria-hidden="true"></i>`)
+                let total = 0;
+                for (let i = 0; i < json.data.length; i++) {
+                    if (json.data[i].status)
+                        total += Number(json.data[i]["stake"])
+                }
+                for (let i = 0; i < json.data.length; i++) {
+                    json.data[i]["stake_value"] = Number(json.data[i]["stake"]);
+                    json.data[i]["vote_value"] = Number(json.data[i]["vote"]);
+                    json.data[i]["status_value"] = Number(json.data[i]["status"]);
+                    json.data[i]["stake_percent"] = (Number(json.data[i]["stake"]) / total * 100).toFixed(2);
+                }
 
+                document.querySelector('#pools-total-num').classList.remove('hidden');
+                document.querySelector('#pools-total-num-value').innerText = json.data.length;
 
+                return json.data;
+            },
+        },
+        rowCallback: function (row, data, displayNum, displayIndex, dataIndex) {
+            $(row).toggleClass("row-kickout", !data.status);
+
+            if (data.stake_percent) {
+                let staked_by_others = 0;
+                const all_nodes = window.pools_table.rows( { order: 'applied' } ).nodes();
+
+                for(let i = 0; i< displayIndex; i++)
+                    staked_by_others += Number($(all_nodes[i]).find(".col-stake").attr("data-percent"));
+
+                $(row).find(".col-stake").attr("data-percent", data.stake_percent);
+                $(row).find(".col-stake .bar-1").css("background", "rgb(253, 204, 186)").css("opacity", "0.2").css("width", staked_by_others + "%").css("min-width", "1px");
+                $(row).find(".col-stake .bar-2").css("background", "rgb(213, 111, 74)").css("opacity", "0.2").css("width", data.stake_percent + "%").css("min-width", "1px");
+            }
+        },
+        fnInitComplete: function () {
+            connectToPoolDetailsContract().then(() => {
+                window.pool_details.get_all_fields({"from_index": 0, "limit": 100}).then((data) => {
+                    window.pools = [];
+                    for (let pool in data) {
+                        const row = window.pools_table.row(`[id="${pool}"]`);
+                        if (row.length) {
+                            const rowData = row.data();
+                            if (data[pool].country_code)
+                                rowData.country_code = `<ul class="f16"><li class="flag ${data[pool].country_code.toLowerCase()}"></li></ul>`;
+                            if (data[pool].url) {
+                                if (!/^https?:\/\//i.test(data[pool].url))
+                                    data[pool].url = 'http://' + data[pool].url;
+                                rowData.url = `<a href="${data[pool].url}" target="_blank"><i class="fas fa-link"></i></a>`;
+                            }
+                            if (pool && (data[pool].twitter || data[pool].url || data[pool].email || data[pool].description || data[pool].country || data[pool].city))
+                                rowData.info = `<a data-toggle="modal" data-target="#poolModal" data-pool-id="${pool}" href="#"><i class="fas fa-info-circle"></i></a>`;
+                            row.data(rowData).draw();
+                        }
+                        window.pools[pool] = data[pool];
+                    }
+                });
+            });
+        },
+        footerCallback: function (row, data, start, end, display) {
+            const total = this.api()
+                .column(10)
+                .data()
+                .reduce(function (a, b) {
+                    return parseInt(a) + parseInt(b);
+                }, 0);
+
+            const delegators = this.api()
+                .column(5)
+                .data()
+                .reduce(function (a, b) {
+                    return parseInt(a) + parseInt(b);
+                }, 0);
+
+            $(this.api().column(7).footer()).html(
+                total.toLocaleString() + '&nbsp;Ⓝ'
+            );
+
+            $(this.api().column(5).footer()).html(
+                delegators.toLocaleString()
+            );
         }
     });
-}
-else{
+
+
+} else {
     document.querySelector('.container.pools').classList.add('hidden');
     document.querySelector('.container.main').classList.remove('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.add('active');
 }
+
+async function connectToPoolDetailsContract() {
+    window.near = await nearAPI.connect({
+        deps: {
+            keyStore: new nearAPI.keyStores.BrowserLocalStorageKeyStore()
+        },
+        ...nearConfig
+    });
+
+    window.walletConnection = new nearAPI.WalletConnection(window.near);
+
+    window.pool_details = await new nearAPI.Contract(window.walletConnection.account(), "name.near", {
+        viewMethods: ['get_all_fields', 'get_num_pools'],
+        changeMethods: [],
+        sender: window.walletConnection.getAccountId()
+    });
+}
+
+$('#poolModal').on('show.bs.modal', function (event) {
+    const control = $(event.relatedTarget);
+    const pool = control.data('pool-id');
+    const modal = $(this);
+    const poolFound = window.pools.hasOwnProperty(pool);
+    if (poolFound) {
+        const poolProfile = window.pools[pool];
+        modal.find('#pool-twitter').toggleClass('hidden', !poolProfile.twitter);
+        modal.find('#pool-twitter-value').html(`<a href="https://twitter.com/${poolProfile.twitter}">${poolProfile.twitter}</a>`);
+
+        modal.find('#pool-url').toggleClass('hidden', !poolProfile.url);
+        modal.find('#pool-url-value').html(`<a href="${poolProfile.url}" target="_blank">${poolProfile.url}</a>`);
+
+        modal.find('#pool-email').toggleClass('hidden', !poolProfile.email);
+        modal.find('#pool-email-value').html(`<a href="mailto:${poolProfile.email}">${poolProfile.email}</a>`);
+
+        modal.find('#pool-discord').toggleClass('hidden', !poolProfile.discord);
+        modal.find('#pool-discord-value').html(`<a href="${poolProfile.discord}" target="_blank">Link</a>`);
+
+        modal.find('#pool-country').toggleClass('hidden', !poolProfile.country);
+        modal.find('#pool-country-value').text(poolProfile.country);
+
+        modal.find('#pool-city').toggleClass('hidden', !poolProfile.city);
+        modal.find('#pool-city-value').text(poolProfile.city);
+
+        modal.find('#pool-description').toggleClass('hidden', !poolProfile.description);
+        modal.find('#pool-description-value').text(poolProfile.description);
+        console.log(poolProfile.description);
+        console.log(poolProfile);
+    }
+
+
+    modal.find('#block-explorer').html(`<a href="https://explorer.near.org/accounts/${pool}" target="_blank">${pool}</a>`);
+    modal.find('.modal-title').text('Staking pool ' + pool);
+    modal.find('#pool-not-found').toggleClass('hidden', poolFound);
+    modal.find('#pool-found').toggleClass('hidden', !poolFound);
+
+    //modal.find('.modal-body input').val(recipient)
+});
 
 
 async function connectToContract(ownerAccountId, contractId, viewMethods, changeMethods) {
