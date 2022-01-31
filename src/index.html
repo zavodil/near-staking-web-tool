@@ -2,6 +2,12 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.png">
+    <link rel="manifest" href="./assets/site.webmanifest">
+    <meta name="msapplication-TileColor" content="#da532c">
+
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
           integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Arvo&display=swap" rel="stylesheet">
@@ -9,6 +15,7 @@
     <link rel="stylesheet" type="text/css"
           href="https://cdn.datatables.net/select/1.3.1/css/select.dataTables.min.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="style.css"/>
 
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.22/datatables.min.js"></script>
@@ -23,537 +30,15 @@
           type="text/css"
           href="//github.com/downloads/lafeber/world-flags-sprite/flags16.css"/>
 
-    <style>
-        body {
-            background: #eef2fe;
-            font-family: BwSeidoRound, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-            'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-            sans-serif;
-        }
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@nearprotocol">
+    <meta name="twitter:creator" content="@zavodil_ru">
+    <meta name="twitter:title" content="NEAR Zavodil Node node">
+    <meta name="twitter:description" content="Stake NEAR with the highest network ARY (~12%), the lowest fee (1%) and claim NFT Proof">
+    <meta name="twitter:image" content="https://near.zavodil.ru/preview.png">
 
-        .f16 {
-            margin-bottom: 0;
-            padding-left: 0;
-            height: 21px;
-        }
 
-        #block-explorer-container {
-            padding-bottom: 0;
-        }
 
-        .dataTable a {
-            text-decoration: none;
-            color: black;
-        }
-
-        .hidden, .select-info {
-            display: none;
-        }
-
-        .block {
-            padding-top: 10px;
-        }
-
-        #after-sign-in-block, .risk {
-            padding-top: 50px
-        }
-
-        .bold {
-            font-weight: bold;
-        }
-
-        .footer-alert {
-            margin-top: 20px;
-        }
-
-        .page-footer {
-            margin-top: 100px;
-            background-color: lightgrey;
-        }
-
-        .page-footer a {
-            color: black;
-        }
-
-        .footer-copyright {
-            background-color: grey;
-        }
-
-        .pools .dataTables_paginate, .pools .dataTables_length, .pools .dataTables_info {
-            display: none;
-        }
-
-        .green {
-            color: darkgreen;
-        }
-
-        .red {
-            color: darkred;
-        }
-
-        #view-pools-table tr {
-            vertical-align: bottom;
-        }
-
-        .col-fees{
-            text-align: right;
-        }
-
-        .col-number-of-accounts {
-            max-width: 60px;
-            text-align: center;
-        }
-
-        .col-phase-2-vote {
-            max-width: 50px;
-            text-align: center;
-        }
-
-        .col-pool-name {
-            max-width: 250px;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        .col-status {
-            text-align: center;
-        }
-
-        td.col-stake{
-            min-width: 120px;
-            position: relative;
-            cursor: pointer;
-        }
-
-        table.dataTable tfoot th, table.dataTable tfoot td {
-            padding-left: 10px;
-        }
-
-        .col-bar {
-            width: 100%;
-            height: 24px;
-            position: relative;
-        }
-
-        .cum-bar-wrapper {
-            height: 100%;
-            width: 100%;
-            display: flex;
-        }
-
-        .cum-stake-number {
-            top: 0;
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-        }
-
-        .row-kickout td{
-            background: linear-gradient(-45deg, rgba(0, 0, 0, 0) 49.9%, #fbdde2 49.9%, #fbdde2 10%, rgba(0, 0, 0, 0) 60%)
-            fixed,
-            linear-gradient(-45deg, #fbdde2 5%, rgba(0, 0, 0, 0) 5%)
-            fixed !important;
-            background-size: 0.5em 0.5em !important
-        }
-
-        @font-face {
-            font-family: BwSeidoRound;
-            src: url(/fonts/389947_6_0.eot);
-            src: url(/fonts/389947_6_0.eot?#iefix) format("embedded-opentype"), url(/fonts/389947_6_0.woff2) format("woff2"), url(/fonts/389947_6_0.woff) format("woff"), url(/fonts/389947_6_0.ttf) format("truetype");
-            font-weight: 500;
-            font-style: normal
-        }
-
-
-        h1 {
-            margin-top: 3em;
-            margin-bottom: 1em;
-        }
-
-        .scene {
-            height: 350px;
-        }
-
-        .face {
-            margin: auto;
-            width: 66%;
-            height: 72%;
-            background-color: #fffaf2;
-        }
-
-        .number {
-            text-align: center;
-            margin: auto;
-            width: 66%;
-            height: 28%;
-            background-color: #ffd9f8;
-            border-top: 5px dotted #82174d;
-            font-size: 1.5rem;
-        }
-
-        .eyes-row {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 24%;
-            padding: 0 8px;
-        }
-
-        .closed {
-            width: 22px;
-            height: 13px;
-            border-top-left-radius: 100px;
-            border-top-right-radius: 100px;
-            border-left: 2px solid #ffa4b1;
-            border-right: 2px solid #ffa4b1;
-            border-top: 2px solid #ffa4b1;
-            margin-bottom: 12px;
-        }
-
-        .eye {
-            width: 26px;
-            height: 26px;
-            border-radius: 100px;
-            background-color: #ffa4b1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 1px;
-        }
-
-        .eye .pupil {
-            position: relative;
-            width: 18px;
-            height: 18px;
-            border-radius: 100px;
-            background-color: #82174d;
-        }
-
-        .eye .pupil:before {
-            content: "";
-            width: 6px;
-            height: 6px;
-            position: absolute;
-            background-color: #fff;
-            top: 4px;
-            left: 3px;
-            border-radius: 100px;
-        }
-
-        .eye .pupil:after {
-            content: "";
-            width: 3px;
-            height: 3px;
-            position: absolute;
-            background-color: #fff;
-            top: 9px;
-            left: 12px;
-            border-radius: 100px;
-        }
-
-        .mouth-row {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            align-items: center;
-        }
-
-        .mouth-row .mouth {
-            margin-top: 3%;
-        }
-
-        .mouth-row .tongue {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #FF585D;
-            border-radius: 50% 50% 30%;
-            margin: 5px 0;
-        }
-
-        .mouth-row .mouth.smile {
-            height: 16px;
-            width: 32px;
-            border-bottom-left-radius: 32px;
-            border-bottom-right-radius: 32px;
-            background-color: #82174d;
-            top: 120px;
-        }
-
-        .mouth-row .mouth.cry {
-            height: 16px;
-            width: 32px;
-            border-top-left-radius: 32px;
-            border-top-right-radius: 32px;
-            background-color: #82174d;
-            top: 120px;
-        }
-
-        .mouth-row .mouth:before {
-            content: "";
-            left: 43px;
-            margin-top: 1%;
-            border-radius: 100%;
-            height: 5%;
-            width: 11.5%;
-            background-color: #f56f79;
-            position: absolute;
-        }
-
-        .mouth-row .mouth:after {
-            content: "";
-            left: 106px;
-            margin-top: 1%;
-            border-radius: 100%;
-            height: 5%;
-            width: 11.5%;
-            background-color: #f56f79;
-            position: absolute;
-        }
-
-        .gameboy {
-            position: relative;
-            width: 400px;
-            margin: auto;
-        }
-
-        .body-shape {
-            position: absolute;
-            height: 300px;
-            width: 205px;
-            border-radius: 15px;
-        }
-
-        .body-shape .shadow {
-            height: 290px;
-        }
-
-        .body-shape .screen {
-            margin: 20px;
-            position: relative;
-            width: 168px;
-            height: 134px;
-            background-color: #82174d;
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-            justify-items: center;
-        }
-
-        .body-shape .dot {
-            content: "";
-            width: 8px;
-            height: 8px;
-            position: absolute;
-            background-color: #ffa4b1;
-            top: 40px;
-            left: 10px;
-            border-radius: 100px;
-        }
-
-        .body-shape .on {
-            background-color: #F0EC74;
-        }
-
-        .body-shape .buttons {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            width: 100%;
-        }
-
-        .body-shape .buttons .row {
-            display: flex;
-        }
-
-        .body-shape .buttons .selects {
-            margin-top: 10px;
-            padding-left: 140px;
-        }
-
-        .body-shape .buttons .arrows {
-            position: relative;
-            height: 40px;
-            width: 40px;
-            border-radius: 100px;
-            background-color: #ffa4b1;
-            margin-left: 30px;
-            padding: 0;
-            cursor: grab;
-        }
-
-        .body-shape .buttons .arrows:disabled {
-            opacity: 0.8;
-            background-color: #d18892;
-        }
-
-        .body-shape .buttons .arrows .updown {
-            position: relative;
-            height: 35px;
-            width: 10px;
-            background-color: #82174d;
-            border-radius: 2px;
-            top: -8px;
-            left: 14px;
-        }
-
-        .body-shape .buttons .arrows .left {
-            position: relative;
-            width: 35px;
-            height: 10px;
-            background-color: #82174d;
-            border-radius: 2px;
-            top: 14px;
-            left: 2px;
-        }
-
-        .body-shape .buttons .arrows .right {
-            position: relative;
-            width: 35px;
-            height: 10px;
-            background-color: #82174d;
-            border-radius: 2px;
-            left: 2px;
-        }
-
-        .body-shape .buttons .ab {
-            width: 64px;
-            height: 64px;
-            background-color: #ffa4b1;
-            border-radius: 10px;
-            transform: rotate(45deg);
-            font-size: 0.6rem;
-            text-align: center;
-        }
-
-        .body-shape .buttons .ab .r {
-            width: 24px;
-            height: 24px;
-            border-radius: 100%;
-            background-color: #82174d;
-            position: absolute;
-            transform: rotate(-45deg);
-            padding: 5px;
-            color: #ffa4b1;
-            cursor: pointer;
-            box-shadow: -1px 0 1px #4B4F54;
-        }
-
-        .body-shape .buttons .ab .r:hover {
-            opacity: 0.8;
-        }
-
-        .body-shape .buttons .ab .r:active {
-            background-color: #F0EC74;
-            opacity: 1;
-        }
-
-        .body-shape .buttons .ab .a {
-            top: 4px;
-            left: 4px;
-        }
-
-        .body-shape .buttons .ab .b {
-            top: 4px;
-            left: 36px;
-        }
-
-        .body-shape .buttons .ab .c {
-            top: 36px;
-            left: 4px;
-        }
-
-        .body-shape .buttons .ab .d {
-            top: 36px;
-            left: 36px;
-        }
-
-        .shadow {
-            background-color: #888ad0;
-            z-index: 0;
-            left: -17px;
-            top: 26px;
-        }
-
-        .side {
-            background-color: #82174d;
-            z-index: 1;
-        }
-
-        .front {
-            background-color: #f56f79;
-            left: 26px;
-            z-index: 2;
-        }
-
-        .loader,
-        .loader:before,
-        .loader:after {
-            background: #f56f79;
-            -webkit-animation: load1 1s infinite ease-in-out;
-            animation: load1 1s infinite ease-in-out;
-            width: 0.4rem;
-            height: 4em;
-        }
-
-        .loader {
-            color: #f56f79;
-            margin: 2px auto;
-            font-size: 0.2rem;
-            -webkit-transform: translateZ(0);
-            -ms-transform: translateZ(0);
-            transform: translateZ(0);
-            -webkit-animation-delay: -0.16s;
-            animation-delay: -0.16s;
-        }
-
-        .loader:before,
-        .loader:after {
-            position: absolute;
-            top: 0;
-            content: '';
-        }
-
-        .loader:before {
-            left: -1.5em;
-            -webkit-animation-delay: -0.32s;
-            animation-delay: -0.32s;
-        }
-
-        .loader:after {
-            left: 1.5em;
-        }
-
-        @-webkit-keyframes load1 {
-            0%,
-            80%,
-            100% {
-                box-shadow: 0 0;
-                height: 2em;
-            }
-            40% {
-                box-shadow: 0 -2em;
-                height: 3em;
-            }
-        }
-
-        @keyframes load1 {
-            0%,
-            80%,
-            100% {
-                box-shadow: 0 0;
-                height: 2em;
-            }
-            40% {
-                box-shadow: 0 -2em;
-                height: 3em;
-            }
-        }
-    </style>
     <title>NEAR Staking Tools by Zavodil Node</title>
 </head>
 <body>
@@ -568,37 +53,142 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item" id="nav-main">
-                <a class="nav-link" href="/">NEAR Lockup Contract Staking</a>
+                <a class="nav-link" href="/">Zavodil node</a>
+            </li>
+            <li class="nav-item" id="nav-nft">
+                <a class="nav-link" href="/?nft">Claim NFT</a>
             </li>
             <li class="nav-item" id="nav-pools">
                 <a class="nav-link" href="/?pools">Pools</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="https://github.com/zavodil/near-staking-web-tool" target="_blank">Source
-                    Code</a>
+            <li class="nav-item hidden" id="nav-stake">
+                <a class="nav-link" href="/?stake">Lockup Staking</a>
             </li>
         </ul>
     </div>
 </nav>
 
-
 <div class="container main hidden">
+    <h1>NEAR Zavodil node</h1>
+
+    <div class="alert alert-success" role="alert">
+        <span style="font-family: Verdana, serif">
+            Permanent 1% fee from community-friendly node <a href="https://wallet.near.org/staking/zavodil.poolv1.near" target="_blank">zavodil.poolv1.near</a>.
+        </span>
+    </div>
+
+    <ul>
+        <li>Only 1% service fee, the highest network ARP (~12%).</li>
+        <li>3 high performance nodes always online located in Germany and Finland.</li>
+        <li>24/7 service. Global network monitoring.</li>
+        <li>Strong <a href="https://gov.near.org/t/official-thread-zavodil-node/156" target="_blank">support of NEAR Staking</a>:
+            first tooling for <a href="/?stake">lockup staking</a> and <a
+                    href="https://github.com/zavodil/near-pool-details" target="_blank">official web wallet</a>.
+        </li>
+        <li>No whales, 1,300+ regular delegators. No any corpo dependencies or affiliations.</li>
+        <li>Maximum compounding rates for delegators because of self ping calls on every new epoch.</li>
+        <li>Additional rewards from the <a href="https://app.marlin.pro/flowmint/bond" target="_blank">Marlin
+            gateway</a></li>
+    </ul>
+
+    <div style="margin-top: 20px;">
+        <a href="https://wallet.near.org/staking/zavodil.poolv1.near" target="_blank"
+           style="font-size: 16px; text-decoration: none; padding: 10px; border-radius: 5px; background-color: #0056b3; color: #FFF">Delegate NOW</a>
+    </div>
+</div>
+
+
+<div class="container nft hidden">
+    <h1>Claim Zavodil Delegator NFT</h1>
+    <h4>All NFT-holders will participate in token giveaways</h4>
+    <h5>First prize pools: $NEAR & AURORA! Follow twitter <a href="https://twitter.com/zavodil_ru">@zavodil_ru</a> for details!</h5>
+
+    <hr />
+    <div>Your NEAR Account</div>
+    <input type="text" value="" id="nft-account-id" placeholder="Your NEAR account">
+    <input type="button" id="nft-check-button" value="Check">
+    <br />
+    <input type="checkbox" id="nft-check-lockup"> <label for="nft-check-lockup">Check lockup of this account</label>
+
+    <div class="hidden" role="alert" id="nft-check-loading">
+        <div class="lds-facebook"><div></div><div></div><div></div></div>
+    </div>
+
+    <div class="alert alert-warning hidden claim-alert" role="alert" id="check-nft-error">
+        Account not found
+    </div>
+
+    <div class="alert alert-warning hidden claim-alert" role="alert" id="check-nft-staking-not-found">
+        Your staking to <a href="https://wallet.near.org/staking/zavodil.poolv1.near" target="_blank">zavodil pool</a> wasn't found.
+        Please <a href="https://wallet.near.org/staking/zavodil.poolv1.near" target="_blank">delegate</a> any amount to proceed.
+    </div>
+
+    <div class="alert alert-success hidden claim-alert" role="alert" id="check-nft-exists">
+        <div style="padding-bottom: 5px">Congratulations, you claimed NFT! Keep staking to increase it tier!</div>
+        <div id="check-nft-exists-media"></div>
+        <div style="padding-top: 20px" id="my-nft-twit"></div>
+    </div>
+
+    <div class="alert alert-success hidden claim-alert" role="alert" id="check-nft-staking-found">
+        <div>
+            <h4>Congratulations! You are eligible to claim NFT</h4>
+        </div>
+        <div style="padding-top: 10px">
+            <a href="#" id="nft-claim-button" style="font-size: 16px; text-decoration: none; padding: 10px; border-radius: 5px; background-color: #0056b3; color: #FFF">
+                Claim NFT
+            </a>
+            <div id="nft-claim-hint" style="padding-top: 10px"></div>
+        </div>
+    </div>
+</div>
+
+<div class="container stake hidden">
     <h1>NEAR Lockup Contract Staking</h1>
     <div>Enter your NEAR account:</div>
     <input type="text" id="near-account" value="name.near">
     <input type="button" id="load-account" value="Load">
 
     <div id="lockup-amount-block" class="block hidden">
-        <div class="alert alert-success">Lockup account found: <span id="lockup-name"></span>.</div>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="account-tabs-lockup-tab" data-toggle="tab" href="#lockup-amount-tab"
+                   role="tab"
+                   aria-controls="lockup-amount-tab"
+                   aria-selected="true">Lockup</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="account-tabs-regular-account-tab" data-toggle="tab"
+                   href="#regular-account-amount-tab" role="tab"
+                   aria-controls="regular-account-amount-tab" aria-selected="false">Regular Account</a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <div id="lockup-amount-tab" class="block tab-pane fade show active" role="tabpanel"
+                 aria-labelledby="account-tabs-lockup-tab">
+                <div class="alert alert-success">Lockup account found: <span id="lockup-name"></span>.</div>
+            </div>
+
+            <div id="regular-account-amount-tab" class="block tab-pane fade" role="tabpanel"
+                 aria-labelledby="account-tabs-regular-account-tab">
+                <div class="alert alert-success regular-account-hint">Use unlocked funds from account: <span
+                        id="regular-account-name"></span>.
+                </div>
+                <div class="alert alert-warning regular-account-not-logged-in">Please login below in order to deposit
+                    and stake with this account.
+                </div>
+            </div>
+        </div>
 
         <div class="block">
             <div><strong>Available to delegate:</strong></div>
             <input type="text" id="near-amount" value="">
             <div>Total Amount: <span id="near-total-amount"></span> NEAR.</div>
-            <div>Already Delegated: <span id="near-deposited-amount"></span> NEAR.</div>
+            <div id="near-already-delegated">Already Delegated: <span id="near-deposited-amount"></span> NEAR.</div>
             <div>Minimal balance: 36 NEAR.</div>
         </div>
     </div>
+
     <div id="lockup-account-not-found" class="block hidden">
         Lockup account not found.
     </div>
@@ -630,9 +220,13 @@
 
     <div id="create-delegation-block" class="block hidden">
         <div>You will delegate <span id="create-delegation-amount"></span> yoctoNEAR to <span
-                id="create-delegation-pool" class="bold"></span> using <span id="create-delegation-account-id" class="bold"></span>.
+                id="create-delegation-pool" class="bold"></span><span
+                id="create-delegation-pool-selected" class="bold hidden">selected pool</span> using <span
+                id="create-delegation-account-id"
+                class="bold"></span>.
         </div>
         <input type="button" id="create-delegation" class="hidden" value="Create Delegation">
+        <input type="button" id="deposit-and-stake" class="hidden" value="Deposit & Stake">
         <div id="create-delegation-hint" class="hidden">Wait few seconds please...</div>
     </div>
 
@@ -704,12 +298,16 @@
     </div>
 </div>
 
-
 <div class="container pools hidden">
-    <h1>NEAR Staking pools</h1>
+    <h1>NEAR Staking pools by <strong>zavodil.poolv1.near</strong></h1>
 
-    <div class="alert alert-success" role="alert">Are you a staking pool owner? Fill your <a
-            href="https://github.com/zavodil/near-pool-details">pool details</a> onchain!
+    <div class="alert alert-success" role="alert">
+        <span style="font-family: Verdana, serif">
+        Permanent 1% fee from community-friendly node zavodil.poolv1.near launched by early NEAR adopter, who made popular NEAR toolings and dapps.<br/>
+        Постоянная комиссия пула 1% от независимого пула zavodil.poolv1.near, запущенного автором канала Zavodil, создателем ru-сообщества <a
+                href="https://t.me/near_protocol">@near_protocol</a> и ранним контрибьютером NEAR.
+            <!--Are you a staking pool owner? Fill your <a href="https://github.com/zavodil/near-pool-details">pool details</a> onchain!-->
+        </span>
     </div>
 
     <table id="view-pools-table" class="display">
@@ -814,7 +412,6 @@
     </div>
 </div>
 
-
 <footer class="page-footer font-small pt-4">
     <div class="container-fluid text-center text-md-left">
         <div class="row">
@@ -822,6 +419,7 @@
                 <h5 class="text-uppercase">NEAR STAKING TOOL</h5>
                 <p>by Zavodil node</p>
                 <p>Open source tools for decentralized NEAR community</p>
+                <p><a href="https://github.com/zavodil/near-staking-web-tool" target="_blank">Github</a></p>
 
             </div>
             <hr class="clearfix w-100 d-md-none pb-3">
@@ -855,12 +453,27 @@
         </div>
     </div>
 
-    <div class="footer-copyright text-center py-3">Decentralized Future is NEAR <br/>
-        <a href="https://wallet.near.org/send-money/zavodil.near">Donations to author</a>
-    </div>
+    <div class="footer-copyright text-center py-3">#FutureIsNEAR</div>
 
 </footer>
 
 <script src="./main.js"></script>
+
+<script>window.twttr = (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0],
+        t = window.twttr || {};
+    if (d.getElementById(id)) return t;
+    js = d.createElement(s);
+    js.id = id;
+    js.src = "https://platform.twitter.com/widgets.js";
+    fjs.parentNode.insertBefore(js, fjs);
+
+    t._e = [];
+    t.ready = function(f) {
+        t._e.push(f);
+    };
+
+    return t;
+}(document, "script", "twitter-wjs"));</script>
 </body>
 </html>

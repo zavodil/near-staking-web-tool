@@ -2,6 +2,7 @@ import "regenerator-runtime/runtime";
 import * as nearAPI from "near-api-js";
 import getConfig from "./config";
 import {sha256} from 'js-sha256';
+import Big from 'big.js'
 
 const NearCoef = 1000000000000000000000000;
 const nearConfig = getConfig("mainnet");
@@ -15,7 +16,7 @@ $(document).on('mouseenter', 'td.col-status', function (e) {
     $(this).tooltip({placement: 'bottom', title: "Mainnet status: " + (on ? 'ACTIVE' : 'DISABLED')});
 }).on('mouseenter', 'td.col-stake', function (e) {
     let percent = $(e.target).attr("data-percent");
-    if(percent)
+    if (percent)
         $(this).tooltip({placement: 'bottom', title: percent + "% of total stake"});
 }).on('mouseenter', 'td.col-phase-2-vote', function (e) {
     const on = e.target.innerHTML.includes("green");
@@ -38,12 +39,46 @@ $(document).on('mouseenter', 'td.col-status', function (e) {
         placement: 'bottom',
         title: "Mainnet status"
     });
+}).on('click', "#account-tabs-regular-account-tab", function (e) {
+    const controlAmount = $("#near-amount");
+    const amount = controlAmount.attr("data-regular-amount");
+    if (amount)
+        controlAmount.val(amount);
+
+    $('#near-total-amount').text($('#near-total-amount').attr("data-regular"));
+    $('#near-deposited-amount').text($('#near-deposited-amount').attr("data-regular"));
+    updateNearAmountHint();
+
+    $("#existing-staking-pool-block").addClass("hidden");
+    $("#select-staking-pool-block").removeClass("hidden");
+    createSelectPoolDataTable();
+
+    $("#deposit-and-stake").removeClass("hidden");
+    $("#create-delegation").addClass("hidden");
+
+    $("#create-delegation-pool").addClass("hidden")
+    $("#create-delegation-pool-selected").removeClass("hidden")
+
+    $('#near-already-delegated').addClass("hidden");
+
+}).on('click', "#account-tabs-lockup-tab", function (e) {
+    const controlAmount = $("#near-amount");
+    const amount = controlAmount.attr("data-lockup-amount");
+    if (amount)
+        controlAmount.val(amount);
+
+    $('#near-total-amount').text($('#near-total-amount').attr("data-lockup"));
+    $('#near-deposited-amount').text($('#near-deposited-amount').attr("data-lockup"));
+    updateNearAmountHint();
+
+    $("#deposit-and-stake").addClass("hidden");
+    $("#create-delegation").removeClass("hidden");
+
+    $("#create-delegation-pool").removeClass("hidden")
+    $("#create-delegation-pool-selected").addClass("hidden")
+
+    $('#near-already-delegated').removeClass("hidden");
 });
-
-
-
-
-
 
 document.querySelector('#sign-in').addEventListener('click', () => {
     if (window.lockupAccountId)
@@ -98,11 +133,70 @@ document.querySelector('#create-delegation').addEventListener('click', () => {
     }
 });
 
+
+document.querySelector('#deposit-and-stake').addEventListener('click', () => {
+    const amount = Number(document.querySelector('#near-amount').value);
+    if (window.poolId && window.accountId && amount) {
+        document.querySelector('#create-delegation').setAttribute("disabled", "");
+        document.querySelector('#create-delegation-hint').classList.remove('hidden');
+        const amountNear = nearAPI.utils.format.parseNearAmount(document.querySelector('#near-amount').value);
+        window.walletConnection.requestSignIn(window.accountId, 'NEAR Staking');
+        connectToContract(window.accountId, poolId, [], ['deposit_and_stake']).then(() => {
+            let log = window.contract.deposit_and_stake({}, null, amountNear).then((result) => {
+
+                if (result) {
+                    document.querySelector('#create-delegation-result-success').classList.remove('hidden');
+                    document.querySelector('#create-delegation-result-failed').classList.add('hidden');
+                } else {
+                    document.querySelector('#create-delegation-result-failed').classList.remove('hidden');
+                    document.querySelector('#create-delegation-result-success').classList.add('hidden');
+                }
+
+                document.querySelector('#create-delegation').removeAttribute("disabled");
+                document.querySelector('#create-delegation-hint').classList.add('hidden');
+                document.querySelector('#create-delegation-result-block').classList.remove('hidden');
+            });
+        });
+    }
+});
+
 document.querySelector('#load-account').addEventListener('click', () => {
     window.accountId = prepareAccountId(document.querySelector('#near-account').value);
     window.lockupAccountId = accountToLockup('lockup.near', window.accountId);
 
-    const isLoggedIn = walletConnection.getAccountId() === window.accountId;
+    const isLoggedIn = window.walletConnection.getAccountId() === window.accountId;
+
+
+    //window.walletConnection = new nearAPI.WalletConnection(window.near);
+    /*
+    const account = window.walletConnection.getAccount(window.accountId);
+    const balance = account.getAccountBalance().then((balance) => {
+        console.log("get_balance");
+        console.log(balance);
+    });
+     */
+
+
+    if (isLoggedIn) {
+        if (window.walletConnection.getAccountId() === window.accountId) {
+            window.walletConnection.account().getAccountBalance().then((balance) => {
+                const remainingAmount = Math.max(0, (Number(balance.total) / NearCoef) - 36);
+                $("#near-amount").attr("data-regular-amount", remainingAmount);
+                document.querySelector('#regular-account-name').innerHTML = `<a href="https://wallet.near.org/profile/${window.accountId}" target="_blank">${window.accountId}</a>`;
+
+                $('#near-total-amount').attr("data-regular", Math.max(0, (Number(balance.total) / NearCoef)));
+                $('#near-deposited-amount').attr("data-regular", Math.max(0, (Number(balance.stateStaked) / NearCoef)));
+                console.log(window.walletConnection.account());
+                console.log(balance);
+
+                $(".regular-account-hint").removeClass("hidden");
+                $(".regular-account-not-logged-in").addClass("hidden");
+            });
+        }
+    } else {
+        $(".regular-account-hint").addClass("hidden");
+        $(".regular-account-not-logged-in").removeClass("hidden");
+    }
 
     connectToContract(window.accountId, window.lockupAccountId, ['get_owner_account_id', 'get_balance', 'get_staking_pool_account_id', 'get_known_deposited_balance'], []).then(() => {
 
@@ -119,9 +213,12 @@ document.querySelector('#load-account').addEventListener('click', () => {
                     const remainingAmount = Math.max(0, (Number(lockupAmount) / NearCoef) - (Number(lockupDepositedAmount) / NearCoef) - 36);
                     const totalAmountFormatted = nearAPI.utils.format.formatNearAmount(lockupAmount.toString(), 2);
                     const depositedAmountFormatted = nearAPI.utils.format.formatNearAmount(lockupDepositedAmount.toString(), 2);
+                    $("#near-amount").attr("data-lockup-amount", remainingAmount);
                     document.querySelector('#near-amount').value = remainingAmount;
                     document.querySelector('#near-total-amount').innerHTML = totalAmountFormatted;
+                    $('#near-total-amount').attr("data-lockup", totalAmountFormatted);
                     document.querySelector('#near-deposited-amount').innerHTML = depositedAmountFormatted;
+                    $('#near-deposited-amount').attr("data-lockup", depositedAmountFormatted);
                     document.querySelector('#lockup-name').innerHTML = `<a href="https://explorer.mainnet.near.org/accounts/${window.lockupAccountId}" target="_blank">${window.lockupAccountId}</a>`;
                     document.querySelector('#lockup-amount-block').classList.remove('hidden');
 
@@ -146,50 +243,9 @@ document.querySelector('#load-account').addEventListener('click', () => {
 
                         } else {
                             document.querySelector('#select-staking-pool-block').classList.remove('hidden');
+                            document.querySelector('#existing-staking-pool-block').classList.add('hidden');
 
-                            window.table = $('#pools-table').DataTable({
-                                destroy: true,
-                                columnDefs: [{
-                                    orderable: false,
-                                    className: 'select-checkbox',
-                                    targets: 0
-                                },
-                                    {
-                                        targets: 2, render: function (data) {
-                                            return data + " %";
-                                        }
-                                    },
-                                ],
-                                select: {
-                                    style: 'os',
-                                    selector: 'td:first-child'
-                                },
-                                order: [[6, 'desc']],
-                                columns: [
-                                    {data: null, defaultContent: ''},
-                                    {data: "account_id"},
-                                    {data: "numerator"},
-                                    {data: "number_of_accounts"},
-                                    {data: "vote"},
-                                    {data: "stake"},
-                                    {data: "stake", visible: false}
-                                ],
-                                ajax: "pools.txt",
-                                createdRow: function (row, data, dataIndex) {
-                                    const $dateCell = $(row).find('td:eq(5)');
-                                    const item = $dateCell.text();
-                                    $dateCell
-                                        .data('order', item)
-                                        .html(Number(item).toLocaleString() + "&nbsp;Ⓝ");
-
-                                    const $voteCell = $(row).find('td:eq(4)');
-                                    const vote = $voteCell.text();
-                                    $voteCell
-                                        .data('order', Number(data.vote))
-                                        .html(Number(vote) ? `<i class="fa fa-check green" aria-hidden="true"></i>` : `<i class="fa fa-times red" aria-hidden="true"></i>`)
-
-                                }
-                            });
+                            createSelectPoolDataTable();
 
                             if (isLoggedIn) {
                                 document.querySelector('#select-pool').classList.remove('hidden');
@@ -218,23 +274,78 @@ document.querySelector('#load-account').addEventListener('click', () => {
     });*/
 });
 
+function createSelectPoolDataTable() {
+    window.table = $('#pools-table').DataTable({
+        destroy: true,
+        columnDefs: [{
+            orderable: false,
+            className: 'select-checkbox',
+            targets: 0
+        },
+            {
+                targets: 2, render: function (data) {
+                    return data + " %";
+                }
+            },
+        ],
+        select: {
+            style: 'os',
+            selector: 'td:first-child'
+        },
+        order: [[6, 'desc']],
+        columns: [
+            {data: null, defaultContent: ''},
+            {data: "account_id"},
+            {data: "numerator"},
+            {data: "number_of_accounts"},
+            {data: "vote", visible: false},
+            {data: "stake"},
+            {data: "stake", visible: false}
+        ],
+        ajax: "pools.txt",
+        createdRow: function (row, data, dataIndex) {
+            const $dateCell = $(row).find('td:eq(4)');
+            const item = $dateCell.text();
+            $dateCell
+                .data('order', item)
+                .html(Number(item).toLocaleString() + "&nbsp;Ⓝ");
+
+            /*
+            const $voteCell = $(row).find('td:eq(4)');
+            const vote = $voteCell.text();
+            $voteCell
+                .data('order', Number(data.vote))
+                .html(Number(vote) ? `<i class="fa fa-check green" aria-hidden="true"></i>` : `<i class="fa fa-times red" aria-hidden="true"></i>`)
+            */
+        }
+    });
+}
+
 const queryString = window.location.search;
 if (queryString.startsWith("?address=")) {
     const address = queryString.substr("?address=".length);
-    document.querySelector('.container.pools').classList.add('hidden');
     document.querySelector('.container.main').classList.remove('hidden');
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.add('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.remove('active');
 
     document.querySelector('#near-account').value = address;
     setTimeout(() => {
         $("#load-account").trigger("click")
     }, 0);
 } else if (queryString.includes("pools")) {
-    document.querySelector('.container.pools').classList.remove('hidden');
     document.querySelector('.container.main').classList.add('hidden');
-    document.querySelector('#nav-pools').classList.add('active');
+    document.querySelector('.container.pools').classList.remove('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('#nav-main').classList.remove('active');
+    document.querySelector('#nav-pools').classList.add('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.remove('active');
 
     window.pools_table = $('#view-pools-table').DataTable({
         destroy: true,
@@ -242,8 +353,8 @@ if (queryString.startsWith("?address=")) {
         rowId: "account_id",
         sortable: true,
         columnDefs: [
-            { "sorting": [ "desc", "asc" ], "targets": [ 5,6,7,8,9,10 ] },
-            { "sorting": [ "asc", "desc" ], "targets": [ 1,4 ] },
+            {"sorting": ["desc", "asc"], "targets": [5, 6, 7, 8, 9, 10]},
+            {"sorting": ["asc", "desc"], "targets": [1, 4]},
             {
                 targets: 0, render: function (data) {
                     return `<a data-toggle="modal" data-target="#poolModal" data-pool-id="${data}" href="#">${data}</a>`;
@@ -292,7 +403,7 @@ if (queryString.startsWith("?address=")) {
             {data: "country_code", defaultContent: ""},
             {data: "numerator", class: "col-fees"},
             {data: "number_of_accounts", class: "col-number-of-accounts"},
-            {data: "vote", class: "col-phase-2-vote"},
+            {data: "vote", class: "col-phase-2-vote", visible: false},
             {data: "stake", class: "col-stake"},
             {data: "status", class: "col-status"},
             {data: "vote_value", visible: false, defaultContent: ""},
@@ -324,6 +435,8 @@ if (queryString.startsWith("?address=")) {
                 document.querySelector('#pools-total-num').classList.remove('hidden');
                 document.querySelector('#pools-total-num-value').innerText = json.data.length;
 
+                window.poolJson = json.data;
+
                 return json.data;
             },
         },
@@ -332,9 +445,9 @@ if (queryString.startsWith("?address=")) {
 
             if (data.stake_percent) {
                 let staked_by_others = 0;
-                const all_nodes = window.pools_table.rows( { order: 'applied' } ).nodes();
+                const all_nodes = window.pools_table.rows({order: 'applied'}).nodes();
 
-                for(let i = 0; i< displayIndex; i++)
+                for (let i = 0; i < displayIndex; i++)
                     staked_by_others += Number($(all_nodes[i]).find(".col-stake").attr("data-percent"));
 
                 $(row).find(".col-stake").attr("data-percent", data.stake_percent);
@@ -351,7 +464,7 @@ if (queryString.startsWith("?address=")) {
                         if (row.length) {
                             const rowData = row.data();
                             if (data[pool].country_code)
-                                rowData.country_code = `<ul class="f16"><li class="flag ${data[pool].country_code.toLowerCase()}"></li></ul>`;
+                                rowData.country_code = `<ul class="f16"><li title="${data[pool].country_code}" class="flag ${data[pool].country_code.toLowerCase()}"></li></ul>`;
                             if (data[pool].url) {
                                 if (!/^https?:\/\//i.test(data[pool].url))
                                     data[pool].url = 'http://' + data[pool].url;
@@ -388,15 +501,256 @@ if (queryString.startsWith("?address=")) {
             $(this.api().column(5).footer()).html(
                 delegators.toLocaleString()
             );
+
+            /*
+            let voted = 0; let total_voted = 0;
+            if (window.pools_table) {
+                const data = window.pools_table.data();
+                for (let index in data) {
+                    const item = data[index];
+                    if (item.status) {
+                        if (item.vote)
+                            voted += item.stake;
+                        total_voted += item.stake;
+                    }
+                }
+
+                const res = (voted / total_voted * 100).toFixed(2) + "%";
+                $(this.api().column(6).footer()).html(res);
+
+                $(".container.pools .dataTables_length").html("Phase 2 vote: " + res).css("padding-top", "10px").css("padding-left", "17px").show();
+            }
+             */
         }
     });
 
-
-} else {
+} else if (queryString.includes("stake")) {
+    document.querySelector('.container.main').classList.add('hidden');
     document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.remove('hidden');
+    document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.remove('active');
+    document.querySelector('#nav-stake').classList.add('active');
+    document.querySelector('#nav-nft').classList.remove('active');
+
+} else if (queryString.includes("nft")) {
+    document.querySelector('.container.main').classList.add('hidden');
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.remove('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.remove('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.add('active');
+
+    if (queryString.startsWith("?nft=")) {
+        let near_account_id = queryString.substr("?nft=".length);
+        if(near_account_id.indexOf("&") !== -1 ) {
+            near_account_id = near_account_id.substring(0, near_account_id.indexOf("&"));
+        }
+        if(near_account_id) {
+            document.querySelector('#nft-account-id').value = near_account_id;
+            setTimeout(() => {
+                $("#nft-check-button").trigger("click")
+            }, 0);
+        }
+    }
+} else {
     document.querySelector('.container.main').classList.remove('hidden');
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.remove('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.add('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.remove('active');
+}
+
+async function connectToPoolContract() {
+    if (!window.zavodil_pool_details) {
+        window.zavodil_pool_details = await new nearAPI.Contract(
+            window.walletConnection.account(), "zavodil.poolv1.near", {
+                viewMethods: ['get_account_staked_balance'],
+                changeMethods: [],
+                sender: window.walletConnection.getAccountId()
+            });
+    }
+}
+
+async function connectToClaimNFTContract() {
+    if (!window.zavodil_nft_details) {
+        window.zavodil_nft_details = await new nearAPI.Contract(
+            window.walletConnection.account(),
+            "zavodil.node.staking.near", {
+                viewMethods: ['get_available_token', 'nft_tokens_for_owner'],
+                changeMethods: ['nft_mint'],
+                sender: window.walletConnection.getAccountId()
+            });
+    }
+}
+
+document.getElementById("nft-account-id").addEventListener("keydown", checkNearAccountKeyDown, false);
+document.getElementById("nft-check-button").addEventListener("click", checkNearAccount, false);
+document.getElementById("nft-claim-button").addEventListener("click", claimNFT, false);
+
+async function checkNearAccountKeyDown(e) {
+    e = e || window.event;
+    if (e.keyCode == 13) {
+        await checkNearAccount();
+    }
+}
+async function GetSignUrl(account_id, method, params, deposit, gas, receiver_id, meta, callback_url, network) {
+    if (!network)
+        network = "mainnet";
+    const deposit_value = typeof deposit == 'string' ? deposit : nearAPI.utils.format.parseNearAmount('' + deposit);
+    const actions = [nearAPI.transactions.functionCall(method, Buffer.from(JSON.stringify(params)), gas, deposit_value)];
+    const keypair = nearAPI.utils.KeyPair.fromRandom('ed25519');
+    const provider = new nearAPI.providers.JsonRpcProvider({url: 'https://rpc.' + network + '.near.org'});
+    const block = await provider.block({finality: 'final'});
+    const txs = [nearAPI.transactions.createTransaction(account_id, keypair.publicKey, receiver_id, 1, actions, nearAPI.utils.serialize.base_decode(block.header.hash))];
+    const newUrl = new URL('sign', 'https://wallet.' + network + '.near.org/');
+    newUrl.searchParams.set('transactions', txs.map(transaction => nearAPI.utils.serialize.serialize(nearAPI.transactions.SCHEMA, transaction)).map(serialized => Buffer.from(serialized).toString('base64')).join(','));
+    newUrl.searchParams.set('callbackUrl', callback_url);
+    if (meta)
+        newUrl.searchParams.set('meta', meta);
+    return newUrl.href;
+}
+
+async function claimNFT() {
+    const account_id = document.querySelector('#nft-account-id').value;
+    const is_lockup = document.getElementById('nft-check-lockup').checked;
+
+    let params = {
+        receiver_id: account_id
+    };
+
+    if(is_lockup){
+        params.is_lockup = is_lockup;
+    }
+
+    let url = await GetSignUrl(
+        account_id,
+        "nft_mint",
+        params,
+        nearAPI.utils.format.parseNearAmount("0.01"),
+        200000000000000,
+        "zavodil.node.staking.near",
+        null,
+        `https://near.zavodil.ru/?nft=${account_id}`,
+        "mainnet");
+
+    window.location.replace(url);
+}
+
+async function checkNearAccount() {
+    document.querySelector("#nft-check-loading").classList.remove('hidden');
+    await connectToPoolContract();
+
+    let account_id = document.querySelector('#nft-account-id').value;
+    let staking_account_id = account_id;
+
+    const is_lockup = document.getElementById('nft-check-lockup').checked;
+    console.log(is_lockup)
+    if(is_lockup){
+        staking_account_id = accountToLockup('lockup.near', account_id);
+        console.log(`Use lockup: ${account_id}`);
+    }
+
+    if(account_id) {
+        window.zavodil_pool_details.get_account_staked_balance({account_id: staking_account_id})
+            .then(async amount => {
+                await showStaking(amount, account_id, staking_account_id);
+            })
+            .catch(err => {
+                console.log(err)
+                document.querySelector("#nft-check-loading").classList.add('hidden');
+                document.querySelector('#check-nft-staking-not-found').classList.add('hidden');
+                document.querySelector('#check-nft-staking-found').classList.add('hidden');
+                document.querySelector('#check-nft-error').classList.remove('hidden');
+            });
+    }
+
+}
+
+let all_nfts = {
+    "Early NEAR Delegator": 1,
+    "Honored NEAR Delegator": 2,
+    "Premium NEAR Delegator": 3,
+    "Legendary NEAR Delegator": 4,
+};
+
+async function showStaking(amount, account_id, staking_account_id){
+    await connectToClaimNFTContract();
+    console.log(`Staking balance ${nearAPI.utils.format.formatNearAmount(amount, 2)}`)
+    let staked_amount = Big(amount);
+
+    let existing_tokens = await window.zavodil_nft_details.nft_tokens_for_owner({account_id});
+    let available_token = await window.zavodil_nft_details.get_available_token({
+        staked_amount: amount,
+        account_id
+    });
+
+    document.querySelector("#nft-check-loading").classList.add('hidden');
+    document.querySelector('#check-nft-error').classList.add('hidden');
+
+    console.log(existing_tokens);
+    console.log(available_token);
+
+    let allow_to_claim = !!available_token && available_token.hasOwnProperty('title');
+    if (allow_to_claim) {
+        let max_existing_tokens_level = 0;
+        for (let token_index in existing_tokens) {
+            let existing_nft_level = all_nfts[existing_tokens[token_index].metadata.title];
+            max_existing_tokens_level = Math.max(max_existing_tokens_level, existing_nft_level);
+        }
+
+        console.log(`NFT level ${max_existing_tokens_level} found`);
+
+        allow_to_claim = all_nfts[available_token.title] > max_existing_tokens_level;
+    }
+
+    if (allow_to_claim && staked_amount.gt(0)) {
+        document.querySelector('#check-nft-staking-not-found').classList.add('hidden');
+
+        if (allow_to_claim) {
+            document.querySelector('#nft-account-id').setAttribute('disabled', 'disabled');
+            document.querySelector('#nft-check-lockup').setAttribute('disabled', 'disabled');
+            document.querySelector('#nft-check-button').setAttribute('disabled', 'disabled');
+            document.getElementById('nft-claim-hint').innerHTML = `<code>Sign transaction with ${account_id} only</code>`;
+        }
+
+        document.querySelector('#check-nft-exists').classList.add('hidden');
+        document.querySelector('#check-nft-staking-found').classList.toggle('hidden', !allow_to_claim);
+    } else {
+        if (existing_tokens && existing_tokens.length) {
+            document.querySelector('#check-nft-exists').classList.remove('hidden');
+            document.querySelector('#check-nft-staking-not-found').classList.add('hidden');
+            document.querySelector('#check-nft-staking-found').classList.add('hidden');
+
+            document.getElementById('check-nft-exists-media').innerHTML =
+                existing_tokens
+                    .map(token => `<div class="nft-token"><img src="https://storage.pluminite.com/ipfs/${token.metadata.media}" alt="NFT"><br />${token.metadata.title}</div>`)
+                    .join();
+
+            let token = existing_tokens[existing_tokens.length - 1];
+            document.getElementById('my-nft-twit').innerHTML = "";
+            twttr.widgets.createShareButton('https://near.zavodil.ru/?nft',
+                document.getElementById('my-nft-twit'),
+                {
+                    size: 'large',
+                    related: 'zavodil_ru',
+                    text: `I just claimed ${token.metadata.title} NFT! Stake NEAR with Zavodil node with ~12% APY & lowest 1% service fee and claim NFT! #FutureIsNEAR @zavodil_ru`,
+                    attached: `https://storage.pluminite.com/ipfs/${token.metadata.media}`,
+                    dnt: true,
+                }
+            );
+        } else {
+            document.querySelector('#check-nft-exists').classList.add('hidden');
+            document.querySelector('#check-nft-staking-not-found').classList.remove('hidden');
+            document.querySelector('#check-nft-staking-found').classList.add('hidden');
+        }
+    }
 }
 
 async function connectToPoolDetailsContract() {
