@@ -61,6 +61,9 @@
             <li class="nav-item" id="nav-pools">
                 <a class="nav-link" href="/?pools">Pools</a>
             </li>
+            <li class="nav-item" id="nav-aurora">
+                <a class="nav-link" href="/?aurora">Claim Aurora</a>
+            </li>
             <li class="nav-item hidden" id="nav-stake">
                 <a class="nav-link" href="/?stake">Lockup Staking</a>
             </li>
@@ -97,6 +100,40 @@
     </div>
 </div>
 
+<div class="container aurora hidden">
+    <h1>Claim your rewards from AURORA pool</h1>
+
+    <div>Your NEAR Account</div>
+    <input type="text" value="" id="aurora-account-id" placeholder="Your NEAR account">
+    <input type="button" id="aurora-check-button" value="Check">
+
+    <div class="hidden" role="alert" id="aurora-check-loading">
+        <div class="lds-facebook"><div></div><div></div><div></div></div>
+    </div>
+
+    <div class="alert alert-warning hidden claim-alert" role="alert" id="check-aurora-error">
+        Account rewards not found
+    </div>
+
+    <div class="alert alert-success hidden claim-alert" role="alert" id="check-aurora-found">
+        <div>
+            <h4>You are eligible to claim <span id="aurora-amount"></span> AURORA</h4>
+        </div>
+        <div style="padding-top: 10px">
+            <a href="#" id="aurora-storage-deposit-button" class="hidden" style="font-size: 16px; text-decoration: none; padding: 10px; border-radius: 5px; background-color: #0056b3; color: #FFF">
+                Storage Deposit & Claim AURORA
+            </a>
+            <a href="#" id="aurora-claim-button" class="hidden" style="font-size: 16px; text-decoration: none; padding: 10px; border-radius: 5px; background-color: #0056b3; color: #FFF">
+                Claim AURORA
+            </a>
+            <div id="aurora-claim-hint" style="padding-top: 10px"></div>
+        </div>
+    </div>
+
+    <hr />
+    <h5>Do you stake NEAR? <a href="?nft">Claim free NFT</a> and participate in token giveaways</h5>
+    <h5>Follow twitter <a href="https://twitter.com/zavodil_ru">@zavodil_ru</a> for details!</h5>
+</div>
 
 <div class="container nft hidden">
     <h1>Claim Zavodil Delegator NFT</h1>

@@ -328,10 +328,12 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.pools').classList.add('hidden');
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.add('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-aurora').classList.remove('active');
 
     document.querySelector('#near-account').value = address;
     setTimeout(() => {
@@ -342,10 +344,12 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.pools').classList.remove('hidden');
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-pools').classList.add('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-aurora').classList.remove('active');
 
     window.pools_table = $('#view-pools-table').DataTable({
         destroy: true,
@@ -529,20 +533,24 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.pools').classList.add('hidden');
     document.querySelector('.container.stake').classList.remove('hidden');
     document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.add('active');
     document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-aurora').classList.remove('active');
 
 } else if (queryString.includes("nft")) {
     document.querySelector('.container.main').classList.add('hidden');
     document.querySelector('.container.pools').classList.add('hidden');
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.remove('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.add('active');
+    document.querySelector('#nav-aurora').classList.remove('active');
 
     if (queryString.startsWith("?nft=")) {
         let near_account_id = queryString.substr("?nft=".length);
@@ -556,11 +564,23 @@ if (queryString.startsWith("?address=")) {
             }, 0);
         }
     }
+} else if (queryString.includes("aurora")) {
+    document.querySelector('.container.main').classList.add('hidden');
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.aurora').classList.remove('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.remove('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-aurora').classList.add('active');
 } else {
     document.querySelector('.container.main').classList.remove('hidden');
     document.querySelector('.container.pools').classList.add('hidden');
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.remove('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.add('active');
     document.querySelector('#nav-stake').classList.remove('active');
@@ -573,6 +593,28 @@ async function connectToPoolContract() {
             window.walletConnection.account(), "zavodil.poolv1.near", {
                 viewMethods: ['get_account_staked_balance'],
                 changeMethods: [],
+                sender: window.walletConnection.getAccountId()
+            });
+    }
+}
+
+async function connectAuroraPoolContract() {
+    if (!window.aurora_pool_details) {
+        window.aurora_pool_details = await new nearAPI.Contract(
+            window.walletConnection.account(), "aurora.pool.near", {
+                viewMethods: ['get_unclaimed_reward'],
+                changeMethods: ['claim'],
+                sender: window.walletConnection.getAccountId()
+            });
+    }
+}
+
+async function connectAuroraTokenContract() {
+    if (!window.aurora_token_details) {
+        window.aurora_token_details = await new nearAPI.Contract(
+            window.walletConnection.account(), "aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near", {
+                viewMethods: ['storage_balance_of'],
+                changeMethods: ['storage_deposit'],
                 sender: window.walletConnection.getAccountId()
             });
     }
@@ -594,23 +636,71 @@ document.getElementById("nft-account-id").addEventListener("keydown", checkNearA
 document.getElementById("nft-check-button").addEventListener("click", checkNearAccount, false);
 document.getElementById("nft-claim-button").addEventListener("click", claimNFT, false);
 
+document.getElementById("aurora-account-id").addEventListener("keydown", checkAuroraNearAccountKeyDown, false);
+document.getElementById("aurora-check-button").addEventListener("click", checkAuroraAccount, false);
+document.getElementById("aurora-claim-button").addEventListener("click", claimAurora, false);
+document.getElementById("aurora-storage-deposit-button").addEventListener("click", depositAndClaimAurora, false);
+
+
+
 async function checkNearAccountKeyDown(e) {
     e = e || window.event;
     if (e.keyCode == 13) {
         await checkNearAccount();
     }
 }
+
+async function checkAuroraNearAccountKeyDown(e) {
+    e = e || window.event;
+    if (e.keyCode == 13) {
+        await checkAuroraAccount();
+    }
+}
+
 async function GetSignUrl(account_id, method, params, deposit, gas, receiver_id, meta, callback_url, network) {
     if (!network)
         network = "mainnet";
-    const deposit_value = typeof deposit == 'string' ? deposit : nearAPI.utils.format.parseNearAmount('' + deposit);
-    const actions = [nearAPI.transactions.functionCall(method, Buffer.from(JSON.stringify(params)), gas, deposit_value)];
+
+    let actions = [];
+    if(typeof receiver_id == 'string') {
+        const deposit_value = typeof deposit == 'string' ? deposit : nearAPI.utils.format.parseNearAmount('' + deposit);
+        actions = [nearAPI.transactions.functionCall(method, Buffer.from(JSON.stringify(params)), gas, deposit_value)];
+    }
+    else if (receiver_id.length === method.length
+        && receiver_id.length === params.length
+        && receiver_id.length === gas.length
+        && receiver_id.length === deposit.length
+    ){
+        for(let i=0; i< receiver_id.length; i++){
+            const deposit_value = typeof deposit[i] == 'string' ? deposit[i] : nearAPI.utils.format.parseNearAmount('' + deposit[i]);
+            actions.push([nearAPI.transactions.functionCall(method[i], Buffer.from(JSON.stringify(params[i])), gas[i], deposit_value)]);
+        }
+    }
+    else {
+        alert("Illegal parameters");
+        return
+    }
+
     const keypair = nearAPI.utils.KeyPair.fromRandom('ed25519');
     const provider = new nearAPI.providers.JsonRpcProvider({url: 'https://rpc.' + network + '.near.org'});
     const block = await provider.block({finality: 'final'});
-    const txs = [nearAPI.transactions.createTransaction(account_id, keypair.publicKey, receiver_id, 1, actions, nearAPI.utils.serialize.base_decode(block.header.hash))];
+
+    let txs = [];
+    if(typeof receiver_id == 'string') {
+        txs = [nearAPI.transactions.createTransaction(account_id, keypair.publicKey, receiver_id, 1, actions, nearAPI.utils.serialize.base_decode(block.header.hash))];
+    }
+    else{
+        for(let i=0; i< receiver_id.length; i++) {
+            txs.push(nearAPI.transactions.createTransaction(account_id, keypair.publicKey, receiver_id[i], i, actions[i], nearAPI.utils.serialize.base_decode(block.header.hash)));
+            console.log(txs)
+        }
+    }
+
     const newUrl = new URL('sign', 'https://wallet.' + network + '.near.org/');
-    newUrl.searchParams.set('transactions', txs.map(transaction => nearAPI.utils.serialize.serialize(nearAPI.transactions.SCHEMA, transaction)).map(serialized => Buffer.from(serialized).toString('base64')).join(','));
+    newUrl.searchParams.set('transactions', txs
+        .map(transaction => nearAPI.utils.serialize.serialize(nearAPI.transactions.SCHEMA, transaction))
+        .map(serialized => Buffer.from(serialized).toString('base64'))
+        .join(','));
     newUrl.searchParams.set('callbackUrl', callback_url);
     if (meta)
         newUrl.searchParams.set('meta', meta);
@@ -643,6 +733,106 @@ async function claimNFT() {
     window.location.replace(url);
 }
 
+async function checkAuroraAccount() {
+    document.querySelector("#aurora-check-loading").classList.remove('hidden');
+    await connectAuroraPoolContract();
+
+    let account_id = document.querySelector('#aurora-account-id').value;
+
+    if(account_id) {
+        window.aurora_pool_details.get_unclaimed_reward({account_id, farm_id: 0})
+            .then(async amount => {
+                await showAuroraAmount(amount, account_id);
+            })
+            .catch(err => {
+                console.log(err)
+                document.querySelector("#aurora-check-loading").classList.add('hidden');
+                document.querySelector('#check-aurora-found').classList.add('hidden');
+                document.querySelector('#check-aurora-error').classList.remove('hidden');
+            });
+    }
+}
+
+
+async function showAuroraAmount(amount, account_id){
+    let amount_aurora = (Math.round(amount / 10000000000) / 100000000);
+    console.log(`Staking balance ${amount_aurora.toFixed(4)}`)
+
+
+    document.querySelector('#check-aurora-error').classList.add('hidden');
+
+    if (amount_aurora > 0) {
+        document.getElementById('aurora-amount').innerHTML = amount_aurora.toFixed(4);
+        document.querySelector('#check-aurora-found').classList.remove('hidden');
+
+        await connectAuroraTokenContract();
+        window.aurora_token_details.storage_balance_of({account_id}).then(storage_balance => {
+            console.log(`Storage Deposit for Aurora token:`);
+            console.log(storage_balance);
+
+            if(!!storage_balance?.total) {
+                document.querySelector('#aurora-claim-button').classList.remove('hidden');
+                document.querySelector('#aurora-claim-button').setAttribute('account-id', account_id);
+                document.querySelector('#aurora-storage-deposit-button').classList.add('hidden');
+            }
+            else{
+                document.querySelector('#aurora-claim-button').classList.add('hidden');
+                document.querySelector('#aurora-storage-deposit-button').classList.remove('hidden');
+                document.querySelector('#aurora-storage-deposit-button').setAttribute('account-id', account_id);
+            }
+
+            document.getElementById('aurora-claim-hint').innerHTML = `Double check transaction details before to sign with account <code>${account_id}</code>`;
+        })
+
+    } else {
+        document.querySelector('#check-aurora-error').classList.remove('hidden');
+        document.querySelector('#check-aurora-found').classList.add('hidden');
+    }
+
+    document.querySelector("#aurora-check-loading").classList.add('hidden');
+}
+
+async function claimAurora() {
+    const account_id = document.querySelector('#aurora-claim-button').getAttribute('account-id')
+    if(account_id) {
+        await connectAuroraPoolContract();
+
+        let url = await GetSignUrl(
+            account_id,
+            "claim",
+            {"token_id": "aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near", "farm_id": 0},
+            nearAPI.utils.format.parseNearAmount("0.000000000000000000000001"),
+            200000000000000,
+            "aurora.pool.near",
+            null,
+            `https://near.zavodil.ru/`,
+            "mainnet");
+
+        window.location.replace(url);
+    }
+}
+
+async function depositAndClaimAurora() {
+    const account_id = document.querySelector('#aurora-storage-deposit-button').getAttribute('account-id')
+    if(account_id) {
+        await connectAuroraPoolContract();
+
+        let url = await GetSignUrl(
+            account_id,
+            ["storage_deposit", "claim"],
+            [{account_id}, {"token_id": "aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near", "farm_id": 0}],
+            [nearAPI.utils.format.parseNearAmount("0.0125"), nearAPI.utils.format.parseNearAmount("0.000000000000000000000001")],
+            [100000000000000, 100000000000000],
+            ["aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near", "aurora.pool.near"],
+                null,
+                `https://near.zavodil.ru/`,
+                "mainnet");
+
+
+        window.location.replace(url);
+    }
+}
+
 async function checkNearAccount() {
     document.querySelector("#nft-check-loading").classList.remove('hidden');
     await connectToPoolContract();
@@ -670,7 +860,6 @@ async function checkNearAccount() {
                 document.querySelector('#check-nft-error').classList.remove('hidden');
             });
     }
-
 }
 
 let all_nfts = {
@@ -682,7 +871,7 @@ let all_nfts = {
 
 async function showStaking(amount, account_id, staking_account_id){
     await connectToClaimNFTContract();
-    console.log(`Staking balance ${nearAPI.utils.format.formatNearAmount(amount, 2)}`)
+    console.log(`Staking balance ${nearAPI.utils.format.formatNearAmount(amount, )}`)
     let staked_amount = Big(amount);
 
     let existing_tokens = await window.zavodil_nft_details.nft_tokens_for_owner({account_id});
