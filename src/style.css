@@ -5,6 +5,13 @@ body {
     sans-serif;
 }
 
+html, body { height: 100%;}
+
+body > footer {
+  position: sticky;
+  top: 100vh;
+}
+
 .f16 {
     margin-bottom: 0;
     padding-left: 0;
