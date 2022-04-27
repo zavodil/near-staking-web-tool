@@ -3,7 +3,7 @@ import * as nearAPI from "near-api-js";
 import getConfig from "./config";
 
 const nearConfig = getConfig("mainnet");
-console.log(nearConfig)
+
 
 document.getElementById("usn-account-id").addEventListener("keydown", checkUsnNearAccountKeyDown, false);
 document.getElementById("usn-check-button").addEventListener("click", loadUSNBalances, false);
@@ -58,7 +58,6 @@ async function loadUSNBalances() {
 
         window.usn_contract.ft_balance_of({account_id})
             .then(async amount => {
-                console.log(amount);
                 await showUSNAmount(amount, account_id);
             })
             .catch(err => {
@@ -219,15 +218,4 @@ async function connect(nearConfig) {
 
     // Needed to access wallet login
     window.walletConnection = new nearAPI.WalletConnection(window.near);
-
-    // Initializing our contract APIs by contract name and configuration.
-    window.contract = await new nearAPI.Contract(window.walletConnection.account(), nearConfig.contractName, {
-        // View methods are read-only – they don't modify the state, but usually return some value
-        viewMethods: ['get_all_ideas'],
-        // Change methods can modify the state, but you don't receive the returned value when called
-        changeMethods: [],
-        // Sender is the account ID to initialize transactions.
-        // getAccountId() will return empty string if user is still unauthorized
-        sender: window.walletConnection.getAccountId()
-    });
 }
