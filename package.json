@@ -15,10 +15,12 @@
     "prestart": "yarn build && yarn deploy:contract",
     "start": "export PORT=42645 && parcel src/index.html",
     "web": "export PORT=42645 && parcel src/index.html",
+    "web:usn": "export PORT=42645 && parcel usn/index.html",
     "start:dev": "env-cmd -f ./neardev/dev-account.env parcel src/index.html",
     "test:cargo": "cd contract && cargo test -- --nocapture",
     "test": "yarn build && yarn test:cargo && jest",
-    "build:web": "rm -rf dist && export NODE_ENV=mainnet && parcel build src/index.html --public-url ./ && rm -rf mainnet && mv dist mainnet"
+    "build:web": "rm -rf dist && export NODE_ENV=mainnet && parcel build src/index.html --public-url ./ && rm -rf mainnet && mv dist mainnet",
+    "build:web:usn": "rm -rf dist && export NODE_ENV=mainnet && parcel build usn/index.html --public-url ./ && rm -rf mainnet && mv dist mainnet"
   },
   "devDependencies": {
     "env-cmd": "^10.1.0",

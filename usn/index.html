@@ -1,0 +1,49 @@
+<html>
+<head>
+    <title>USN</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+          integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="style.css"/>
+</head>
+<body>
+<h1>USN <=> NEAR swaps</h1>
+
+<div>Your NEAR Account</div>
+<input type="text" value="" id="usn-account-id" placeholder="Your NEAR account">
+<input type="button" id="usn-check-button" value="Load">
+
+<div class="hidden" role="alert" id="usn-check-loading">
+    <div class="lds-facebook"><div></div><div></div><div></div></div>
+</div>
+
+<div class="alert alert-warning hidden claim-alert" role="alert" id="check-usn-error">
+    Data not found
+</div>
+
+<div id="check-usn-found" class="hidden">
+    <div class="alert alert-success claim-alert" role="alert">
+        <div>
+            Balance: $<input type="text" id="usn-amount" style="width: 90px"/> USN
+        </div>
+        <div class="link-button-container hidden" id="usn-unwrap-button" >
+            <a href="#" class="link-button">
+                Swap USN to NEAR
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert-success claim-alert" role="alert">
+        <div>
+            Balance: $<input type="text" id="usn-near-amount" style="width: 90px"/> NEAR
+        </div>
+        <div class="link-button-container hidden" id="usn-wrap-button">
+            <a href="#" class="link-button">
+                Swap NEAR to USN
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="usn.js"></script>
+</body>
+</html>
