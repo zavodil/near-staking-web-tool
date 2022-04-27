@@ -64,6 +64,9 @@
             <li class="nav-item" id="nav-aurora">
                 <a class="nav-link" href="/?aurora">Claim Aurora</a>
             </li>
+            <li class="nav-item" id="nav-usn">
+                <a class="nav-link" href="/?usn">USN</a>
+            </li>
             <li class="nav-item hidden" id="nav-stake">
                 <a class="nav-link" href="/?stake">Lockup Staking</a>
             </li>
@@ -127,6 +130,54 @@
                 Claim AURORA
             </a>
             <div id="aurora-claim-hint" style="padding-top: 10px"></div>
+        </div>
+    </div>
+
+    <hr />
+    <h5>Do you stake NEAR? <a href="?nft">Claim free NFT</a> and participate in token giveaways</h5>
+    <h5>Follow twitter <a href="https://twitter.com/zavodil_ru">@zavodil_ru</a> for details!</h5>
+</div>
+
+<div class="container usn hidden">
+    <h1>USN <=> NEAR swaps using <a href="https://decentral-bank.finance/" target="_blank">Decentral Bank</a></h1>
+
+    <div>Your NEAR Account</div>
+    <input type="text" value="" id="usn-account-id" placeholder="Your NEAR account">
+    <input type="button" id="usn-check-button" value="Load Balances">
+
+    <div class="hidden" role="alert" id="usn-check-loading">
+        <div class="lds-facebook"><div></div><div></div><div></div></div>
+    </div>
+
+    <div class="alert alert-warning hidden claim-alert" role="alert" id="check-usn-error">
+        Data not found
+    </div>
+
+    <div id="check-usn-found" class="hidden">
+        <div class="alert alert-success claim-alert" role="alert">
+            <div>
+                Balance: $<input type="text" id="usn-amount" style="width: 90px"/> USN
+            </div>
+            <div class="link-button-container hidden" id="usn-unwrap-button" >
+                <a href="#" class="link-button">
+                    Swap USN to NEAR
+                </a>
+            </div>
+        </div>
+
+        <div class="alert alert-success claim-alert" role="alert">
+            <div>
+                Balance: $<input type="text" id="usn-near-amount" style="width: 90px"/> NEAR
+            </div>
+            <div class="link-button-container hidden" id="usn-wrap-button">
+                <a href="#" class="link-button">
+                    Swap NEAR to USN
+                </a>
+            </div>
+        </div>
+
+        <div class="alert alert-success claim-alert" role="alert">
+            <div id="usn-claim-hint"></div>
         </div>
     </div>
 

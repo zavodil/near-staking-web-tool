@@ -329,11 +329,14 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.add('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.remove('active');
+    document.querySelector('#usn').classList.remove('active');
+
 
     document.querySelector('#near-account').value = address;
     setTimeout(() => {
@@ -345,11 +348,14 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-pools').classList.add('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.remove('active');
+    document.querySelector('#nav-usn').classList.remove('active');
+
 
     window.pools_table = $('#view-pools-table').DataTable({
         destroy: true,
@@ -420,8 +426,8 @@ if (queryString.startsWith("?address=")) {
             url: "pools_all.txt",
             dataSrc: function (json) {
                 if (json.seat_price) {
-                    document.querySelector('#seat-price').classList.remove('hidden');
-                    document.querySelector('#seat-price-value').innerText = Number(json.seat_price).toLocaleString();
+                    //document.querySelector('#seat-price').classList.remove('hidden');
+                    //document.querySelector('#seat-price-value').innerText = Number(json.seat_price).toLocaleString();
                 }
 
                 let total = 0;
@@ -534,11 +540,14 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.stake').classList.remove('hidden');
     document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.add('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.remove('active');
+    document.querySelector('#nav-usn').classList.remove('active');
+
 
 } else if (queryString.includes("nft")) {
     document.querySelector('.container.main').classList.add('hidden');
@@ -546,11 +555,14 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.remove('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.add('active');
     document.querySelector('#nav-aurora').classList.remove('active');
+    document.querySelector('#nav-usn').classList.remove('active');
+
 
     if (queryString.startsWith("?nft=")) {
         let near_account_id = queryString.substr("?nft=".length);
@@ -570,11 +582,30 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('.container.aurora').classList.remove('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.add('active');
+    document.querySelector('#nav-usn').classList.remove('active');
+
+    document.querySelector('#aurora-account-id').value = window.localStorage.getItem('aurora_account_id') || "";
+} else if (queryString.includes("usn")) {
+    document.querySelector('.container.main').classList.add('hidden');
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.remove('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.remove('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-aurora').classList.remove('active');
+    document.querySelector('#nav-usn').classList.add('active');
+
+    document.querySelector('#usn-account-id').value = window.localStorage.getItem('usn_account_id') || "";
 } else {
     document.querySelector('.container.main').classList.remove('hidden');
     document.querySelector('.container.pools').classList.add('hidden');
@@ -593,6 +624,17 @@ async function connectToPoolContract() {
             window.walletConnection.account(), "zavodil.poolv1.near", {
                 viewMethods: ['get_account_staked_balance'],
                 changeMethods: [],
+                sender: window.walletConnection.getAccountId()
+            });
+    }
+}
+
+async function connectUSNContract() {
+    if (!window.usn_contract) {
+        window.usn_contract = await new nearAPI.Contract(
+            window.walletConnection.account(), "usn", {
+                viewMethods: ['ft_balance_of'],
+                changeMethods: ['claim'],
                 sender: window.walletConnection.getAccountId()
             });
     }
@@ -641,6 +683,138 @@ document.getElementById("aurora-check-button").addEventListener("click", checkAu
 document.getElementById("aurora-claim-button").addEventListener("click", claimAurora, false);
 document.getElementById("aurora-storage-deposit-button").addEventListener("click", depositAndClaimAurora, false);
 
+document.getElementById("usn-account-id").addEventListener("keydown", checkUsnNearAccountKeyDown, false);
+document.getElementById("usn-check-button").addEventListener("click", loadUSNBalances, false);
+document.getElementById("usn-unwrap-button").addEventListener("click", usnUnwrap, false);
+document.getElementById("usn-wrap-button").addEventListener("click", usnWrap, false);
+
+async function loadNativeBalance (account_id) {
+    try {
+        window.near = await nearAPI.connect({
+            deps: {
+                keyStore: new nearAPI.keyStores.BrowserLocalStorageKeyStore()
+            },
+            ...nearConfig
+        });
+        const account = await near.account(account_id);
+        let balance = await account.getAccountBalance();
+        if (balance) {
+            return parseFloat(nearAPI.utils.format.formatNearAmount(balance?.available, 4));
+        } else {
+            return 0;
+        }
+    }
+    catch (e){
+        return 0;
+    }
+}
+
+async function loadUSNBalances() {
+    document.querySelector("#usn-check-loading").classList.remove('hidden');
+    await connectUSNContract();
+
+    let account_id = document.querySelector('#usn-account-id').value;
+
+    window.localStorage.setItem('usn_account_id', account_id);
+
+    if(account_id) {
+        let balance = await loadNativeBalance(account_id);
+
+        showUsnNearAmount(balance, account_id);
+
+        window.usn_contract.ft_balance_of({account_id})
+            .then(async amount => {
+                console.log(amount);
+                await showUSNAmount(amount, account_id);
+            })
+            .catch(err => {
+                console.log(err)
+                document.querySelector("#usn-check-loading").classList.add('hidden');
+                document.querySelector('#check-usn-found').classList.add('hidden');
+                document.querySelector('#check-usn-error').classList.remove('hidden');
+            });
+    }
+}
+
+function showUsnNearAmount(amount_near, account_id) {
+    console.log(`NEAR balance ${amount_near.toFixed(4)}`)
+
+    document.querySelector('#check-usn-error').classList.add('hidden');
+    document.getElementById('usn-near-amount').value = amount_near.toFixed(4);
+    if (parseFloat(amount_near.toFixed(4)) > 0) {
+        document.querySelector('#usn-wrap-button').classList.remove('hidden');
+        document.querySelector('#usn-wrap-button').setAttribute('account-id', account_id);
+        document.querySelector('#check-usn-found').classList.remove('hidden');
+        document.getElementById('usn-claim-hint').innerHTML = `Double check transaction details before to sign with account <code>${account_id}</code>`;
+    }
+    else {
+        document.querySelector('#usn-wrap-button').setAttribute('account-id', "");
+        document.querySelector('#usn-wrap-button').classList.add('hidden');
+        document.querySelector('#check-usn-error').classList.remove('hidden');
+        document.querySelector('#check-usn-found').classList.add('hidden');
+    }
+}
+
+async function showUSNAmount(amount, account_id){
+    let amount_usn = (Math.round(amount / 10000000000) / 100000000);
+    console.log(`USN balance ${amount_usn.toFixed(4)}`)
+
+    document.getElementById('usn-amount').value = amount_usn.toFixed(4);
+    if (parseFloat(amount_usn.toFixed(4)) > 0) {
+        document.querySelector('#usn-unwrap-button').classList.remove('hidden');
+        document.querySelector('#usn-unwrap-button').setAttribute('account-id', account_id);
+    }
+    else {
+        document.querySelector('#usn-unwrap-button').classList.add('hidden');
+        document.querySelector('#usn-unwrap-button').setAttribute('account-id', "");
+
+    }
+
+    document.querySelector("#usn-check-loading").classList.add('hidden');
+}
+
+
+async function usnWrap() {
+    const account_id = document.querySelector('#usn-wrap-button').getAttribute('account-id')
+    const amount = document.querySelector('#usn-near-amount').value;
+    const amount_near = nearAPI.utils.format.parseNearAmount(amount);
+    if(account_id) {
+        let url = await GetSignUrl(
+            account_id,
+            "buy",
+            {},
+            amount_near,
+            100000000000000,
+            "usn",
+            null,
+            `https://near.zavodil.ru/`,
+            "mainnet");
+
+        window.location.replace(url);
+    }
+}
+
+async function usnUnwrap() {
+    const account_id = document.querySelector('#usn-unwrap-button').getAttribute('account-id')
+    const amount = document.querySelector('#usn-amount').value;
+    const amount_usn = nearAPI.utils.format.parseNearAmount(amount).substring(0, 18);
+    if(account_id) {
+        let url = await GetSignUrl(
+            account_id,
+            "sell",
+            {"amount": amount_usn},
+            nearAPI.utils.format.parseNearAmount("0.000000000000000000000001"),
+            100000000000000,
+            "usn",
+            null,
+            `https://near.zavodil.ru/`,
+            "mainnet");
+
+        window.location.replace(url);
+    }
+}
+
+
 
 
 async function checkNearAccountKeyDown(e) {
@@ -656,6 +830,14 @@ async function checkAuroraNearAccountKeyDown(e) {
         await checkAuroraAccount();
     }
 }
+
+async function checkUsnNearAccountKeyDown(e) {
+    e = e || window.event;
+    if (e.keyCode == 13) {
+        await loadUSNBalances();
+    }
+}
+
 
 async function GetSignUrl(account_id, method, params, deposit, gas, receiver_id, meta, callback_url, network) {
     if (!network)
@@ -738,6 +920,8 @@ async function checkAuroraAccount() {
     await connectAuroraPoolContract();
 
     let account_id = document.querySelector('#aurora-account-id').value;
+
+    window.localStorage.setItem('aurora_account_id', account_id);
 
     if(account_id) {
         window.aurora_pool_details.get_unclaimed_reward({account_id, farm_id: 0})
@@ -919,7 +1103,7 @@ async function showStaking(amount, account_id, staking_account_id){
 
             document.getElementById('check-nft-exists-media').innerHTML =
                 existing_tokens
-                    .map(token => `<div class="nft-token"><img src="https://storage.pluminite.com/ipfs/${token.metadata.media}" alt="NFT"><br />${token.metadata.title}</div>`)
+                    .map(token => `<div class="nft-token"><img src="https://pluminite.mypinata.cloud/ipfs/${token.metadata.media}" alt="NFT"><br />${token.metadata.title}</div>`)
                     .join();
 
             let token = existing_tokens[existing_tokens.length - 1];
@@ -930,7 +1114,7 @@ async function showStaking(amount, account_id, staking_account_id){
                     size: 'large',
                     related: 'zavodil_ru',
                     text: `I just claimed ${token.metadata.title} NFT! Stake NEAR with Zavodil node with ~12% APY & lowest 1% service fee and claim NFT! #FutureIsNEAR @zavodil_ru`,
-                    attached: `https://storage.pluminite.com/ipfs/${token.metadata.media}`,
+                    attached: `https://pluminite.mypinata.cloud/ipfs/${token.metadata.media}`,
                     dnt: true,
                 }
             );

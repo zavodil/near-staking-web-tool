@@ -592,3 +592,21 @@ a {
     height: 275px;
     border: grey 1px solid;
 }
+
+.link-button {
+    font-size: 16px;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #0056b3;
+    color: #FFF!important;
+}
+
+.link-button:hover {
+    text-decoration: none;
+}
+
+.link-button-container {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
