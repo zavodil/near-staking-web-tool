@@ -1,9 +1,11 @@
 import "regenerator-runtime/runtime";
 import * as nearAPI from "near-api-js";
 import getConfig from "./config";
-import {sha256} from 'js-sha256';
+const sha256 = require('js-sha256');
 import Big from 'big.js'
 
+const SITE_URL = "https://zavodil.near.page/";
+const ORACLE_CONVERTER_CONTRACT_ID = "oracle-converter.near";
 const NearCoef = 1000000000000000000000000;
 const nearConfig = getConfig("mainnet");
 
@@ -302,7 +304,11 @@ function createSelectPoolDataTable() {
             {data: "stake"},
             {data: "stake", visible: false}
         ],
-        ajax: "pools.txt",
+        ajax: {
+            url: "https://near.zavodil.ru/pools.json",
+            crossDomain: true,
+            dataType: "json"
+        },
         createdRow: function (row, data, dataIndex) {
             const $dateCell = $(row).find('td:eq(4)');
             const item = $dateCell.text();
@@ -330,12 +336,14 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.add('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.remove('active');
     document.querySelector('#usn').classList.remove('active');
+    document.querySelector('#nav-dao').classList.remove('active');
 
 
     document.querySelector('#near-account').value = address;
@@ -349,12 +357,14 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-pools').classList.add('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.remove('active');
     document.querySelector('#nav-usn').classList.remove('active');
+    document.querySelector('#nav-dao').classList.remove('active');
 
 
     window.pools_table = $('#view-pools-table').DataTable({
@@ -423,7 +433,7 @@ if (queryString.startsWith("?address=")) {
 
         ],
         ajax: {
-            url: "pools_all.txt",
+            url: "https://near.zavodil.ru/pools_all.txt",
             dataSrc: function (json) {
                 if (json.seat_price) {
                     //document.querySelector('#seat-price').classList.remove('hidden');
@@ -541,12 +551,16 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.liquid-staking').classList.add('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.add('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.remove('active');
     document.querySelector('#nav-usn').classList.remove('active');
+    document.querySelector('#nav-liquid-staking').classList.remove('active');
+    document.querySelector('#nav-dao').classList.remove('active');
 
 
 } else if (queryString.includes("nft")) {
@@ -556,12 +570,16 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.nft').classList.remove('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.liquid-staking').classList.add('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.add('active');
     document.querySelector('#nav-aurora').classList.remove('active');
     document.querySelector('#nav-usn').classList.remove('active');
+    document.querySelector('#nav-liquid-staking').classList.remove('active');
+    document.querySelector('#nav-dao').classList.remove('active');
 
 
     if (queryString.startsWith("?nft=")) {
@@ -581,14 +599,19 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.pools').classList.add('hidden');
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.liquid-staking').classList.add('hidden');
     document.querySelector('.container.aurora').classList.remove('hidden');
     document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.add('active');
     document.querySelector('#nav-usn').classList.remove('active');
+    document.querySelector('#nav-liquid-staking').classList.remove('active');
+    document.querySelector('#nav-dao').classList.remove('active');
+
 
     document.querySelector('#aurora-account-id').value = window.localStorage.getItem('aurora_account_id') || "";
 } else if (queryString.includes("usn")) {
@@ -598,24 +621,90 @@ if (queryString.startsWith("?address=")) {
     document.querySelector('.container.nft').classList.add('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
     document.querySelector('.container.usn').classList.remove('hidden');
+    document.querySelector('.container.liquid-staking').classList.add('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.remove('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
     document.querySelector('#nav-aurora').classList.remove('active');
     document.querySelector('#nav-usn').classList.add('active');
+    document.querySelector('#nav-liquid-staking').classList.remove('active');
+    document.querySelector('#nav-dao').classList.remove('active');
 
     document.querySelector('#usn-account-id').value = window.localStorage.getItem('usn_account_id') || "";
+} else if (queryString.includes("liquid-staking")) {
+    document.querySelector('.container.main').classList.add('hidden');
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.liquid-staking').classList.remove('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.remove('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-aurora').classList.remove('active');
+    document.querySelector('#nav-usn').classList.remove('active');
+    document.querySelector('#nav-liquid-staking').classList.add('active');
+    document.querySelector('#nav-dao').classList.remove('active');
+} else if (queryString.includes("dao")) {
+    document.querySelector('.container.main').classList.add('hidden');
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.liquid-staking').classList.add('hidden');
+    document.querySelector('.container.dao').classList.remove('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.remove('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-aurora').classList.remove('active');
+    document.querySelector('#nav-usn').classList.remove('active');
+    document.querySelector('#nav-liquid-staking').classList.remove('active');
+    document.querySelector('#nav-dao').classList.add('active');
+
+    document.querySelector('#dao-user-account-id').value = window.localStorage.getItem('dao_account_id') || "";
+    document.querySelector('#dao-recipient-account-id').value = window.localStorage.getItem('dao_recipient_account_id') || "";
+    document.querySelector('#dao-contract-id').value = window.localStorage.getItem('dao_contract_id') || "";
+    document.querySelector('#dao-bond').value = window.localStorage.getItem('dao_bond') || "";
+} else if (queryString.includes("netcup")) {
+    document.querySelector('.container.netcup').classList.remove('hidden');
+    document.querySelector('.container.main').classList.add('hidden');
+    document.querySelector('.container.pools').classList.add('hidden');
+    document.querySelector('.container.stake').classList.add('hidden');
+    document.querySelector('.container.nft').classList.add('hidden');
+    document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.liquid-staking').classList.add('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
+    document.querySelector('#nav-pools').classList.remove('active');
+    document.querySelector('#nav-main').classList.remove('active');
+    document.querySelector('#nav-stake').classList.remove('active');
+    document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-usn').classList.remove('active');
+    document.querySelector('#nav-liquid-staking').classList.remove('active');
+    document.querySelector('#nav-dao').classList.remove('active');
 } else {
     document.querySelector('.container.main').classList.remove('hidden');
     document.querySelector('.container.pools').classList.add('hidden');
     document.querySelector('.container.stake').classList.add('hidden');
     document.querySelector('.container.nft').classList.remove('hidden');
     document.querySelector('.container.aurora').classList.add('hidden');
+    document.querySelector('.container.usn').classList.add('hidden');
+    document.querySelector('.container.liquid-staking').classList.add('hidden');
+    document.querySelector('.container.dao').classList.add('hidden');
     document.querySelector('#nav-pools').classList.remove('active');
     document.querySelector('#nav-main').classList.add('active');
     document.querySelector('#nav-stake').classList.remove('active');
     document.querySelector('#nav-nft').classList.remove('active');
+    document.querySelector('#nav-usn').classList.remove('active');
+    document.querySelector('#nav-liquid-staking').classList.remove('active');
+    document.querySelector('#nav-dao').classList.remove('active');
 }
 
 async function connectToPoolContract() {
@@ -687,6 +776,8 @@ document.getElementById("usn-account-id").addEventListener("keydown", checkUsnNe
 document.getElementById("usn-check-button").addEventListener("click", loadUSNBalances, false);
 document.getElementById("usn-unwrap-button").addEventListener("click", usnUnwrap, false);
 document.getElementById("usn-wrap-button").addEventListener("click", usnWrap, false);
+
+document.getElementById("dao-create-proposal-button").addEventListener("click", createDaoProposal, false);
 
 async function loadNativeBalance (account_id) {
     try {
@@ -773,6 +864,48 @@ async function showUSNAmount(amount, account_id){
     document.querySelector("#usn-check-loading").classList.add('hidden');
 }
 
+async function createDaoProposal() {
+    const account_id = document.querySelector('#dao-user-account-id').value;
+    const recipient_id = document.querySelector('#dao-recipient-account-id').value;
+    const contract_id = document.querySelector('#dao-contract-id').value;
+    const description = document.querySelector('#dao-description').value;
+    const amount = document.querySelector('#dao-amount').value;
+    const bond = document.querySelector('#dao-bond').value;
+    const amount_usdt = (amount * 1000000).toString();
+    const bond_near = nearAPI.utils.format.parseNearAmount(bond);
+    if (contract_id && recipient_id && account_id && description && amount && bond) {
+        window.localStorage.setItem('dao_account_id', account_id);
+        window.localStorage.setItem('dao_recipient_account_id', recipient_id);
+        window.localStorage.setItem('dao_contract_id', contract_id);
+        window.localStorage.setItem('dao_bond', bond);
+        let url = await GetSignUrl(
+            account_id,
+            "convert",
+            {
+                asset_in: "dac17f958d2ee523a2206206994597c13d831ec7.factory.bridge.near", // USDT
+                asset_out: "wrap.near",
+                amount: amount_usdt,
+                receiver_id: contract_id,
+                receiver_method: "add_proposal",
+                receiver_deposit: bond_near,
+                receiver_gas: "30000000000000",
+                receiver_args: `{"proposal": {"target": "${recipient_id}", "description": "${description} (%EXCHANGE_INFO%)", "kind": {"type": "Payout", "amount": "%AMOUNT%"}}}`
+                //receiver_args: `{"proposal": {"description": "${description} (%EXCHANGE_INFO%)", "kind": {"Transfer": { "token_id": "", "receiver_id": "%SIGNER_ID%", "amount": "%AMOUNT%"}}}}`
+            },
+            bond_near,
+            100000000000000,
+            ORACLE_CONVERTER_CONTRACT_ID,
+            null,
+            SITE_URL,
+            "mainnet");
+
+        window.location.replace(url);
+    }
+    else {
+        console.log(`${contract_id} ${account_id} ${description} ${amount} ${bond}`);
+        alert("Some fields are missing");
+    }
+}
 
 async function usnWrap() {
     const account_id = document.querySelector('#usn-wrap-button').getAttribute('account-id')
@@ -787,7 +920,7 @@ async function usnWrap() {
             100000000000000,
             "usn",
             null,
-            `https://near.zavodil.ru/`,
+            SITE_URL,
             "mainnet");
 
         window.location.replace(url);
@@ -807,7 +940,7 @@ async function usnUnwrap() {
             100000000000000,
             "usn",
             null,
-            `https://near.zavodil.ru/`,
+            SITE_URL,
             "mainnet");
 
         window.location.replace(url);
@@ -909,7 +1042,7 @@ async function claimNFT() {
         200000000000000,
         "zavodil.node.staking.near",
         null,
-        `https://near.zavodil.ru/?nft=${account_id}`,
+        `${SITE_URL}/?nft=${account_id}`,
         "mainnet");
 
     window.location.replace(url);
@@ -989,7 +1122,7 @@ async function claimAurora() {
             200000000000000,
             "aurora.pool.near",
             null,
-            `https://near.zavodil.ru/`,
+            SITE_URL,
             "mainnet");
 
         window.location.replace(url);
@@ -1009,7 +1142,7 @@ async function depositAndClaimAurora() {
             [100000000000000, 100000000000000],
             ["aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near", "aurora.pool.near"],
                 null,
-                `https://near.zavodil.ru/`,
+                SITE_URL,
                 "mainnet");
 
 
@@ -1108,12 +1241,12 @@ async function showStaking(amount, account_id, staking_account_id){
 
             let token = existing_tokens[existing_tokens.length - 1];
             document.getElementById('my-nft-twit').innerHTML = "";
-            twttr.widgets.createShareButton('https://near.zavodil.ru/?nft',
+            twttr.widgets.createShareButton(`${SITE_URL}?nft`,
                 document.getElementById('my-nft-twit'),
                 {
                     size: 'large',
-                    related: 'zavodil_ru',
-                    text: `I just claimed ${token.metadata.title} NFT! Stake NEAR with Zavodil node with ~12% APY & lowest 1% service fee and claim NFT! #FutureIsNEAR @zavodil_ru`,
+                    related: 'zacodil',
+                    text: `I just claimed ${token.metadata.title} NFT! Stake NEAR with Zavodil node with ~10% APY & lowest 1% service fee and claim NFT! #FutureIsNEAR @zacodil`,
                     attached: `https://pluminite.mypinata.cloud/ipfs/${token.metadata.media}`,
                     dnt: true,
                 }

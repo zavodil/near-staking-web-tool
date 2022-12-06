@@ -1,4 +1,4 @@
 NEAR Staking Tool
 ====
 
-Live preview: http://near.zavodil.ru
+Live preview: http://zavodil.near.page
