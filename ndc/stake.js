@@ -1,16 +1,15 @@
 import * as nearAPI from "near-api-js";
+import {PromisePool} from '@supercharge/promise-pool'
+import Big from 'big.js'
 import fs from 'fs';
 
-let blockId = 83240897; // <-- UPDATE VALUE HERE
+let blockId = 83240800; // <-- UPDATE VALUE FOR A GIVEN BLOCK HERE
 
 const NearConfig = {
     networkId: "mainnet",
     nodeUrl: "https://rpc.mainnet.near.org",
     archivalNodeUrl: "https://rpc.mainnet.internal.near.org",
-    contractName: "social.near",
     walletUrl: "https://wallet.near.org",
-    wrapNearAccountId: "wrap.near",
-    finalSynchronizationDelayMs: 3000,
 };
 
 const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
@@ -48,19 +47,73 @@ _near.viewCall = (contractId, methodName, args, blockHeightOrFinality) => {
     return viewCall(_near.nearArchivalConnection.provider, blockId ?? undefined, contractId, methodName, args, finality);
 };
 
-fetch("https://near.zavodil.ru/pools_all.txt") // <-- List of all pools to check
-    .then(res => res.json())
-    .then(res => {
-        console.log(`Loading ${res.data.length} nodes at block ${blockId}...`);
-        let promises = res.data.map(node => _near.viewCall(node.account_id, "get_total_staked_balance", {}, blockId)
-            .then(stake => ({account_id: node.account_id, stake}))
-            .catch(() => ({account_id: node.account_id, stake: 0})))
+const blockInfo = await _near.nearArchivalConnection.provider.block({
+    blockId
+});
 
-        Promise.all(promises).then(values => {
-            let output = {
-                blockId, values
+const validators = await _near.nearArchivalConnection.provider.validators(blockInfo.header.epoch_id)
+    .then(validators => validators.current_validators.map(validator => validator.account_id));
+
+console.log(`Loading delegators of ${validators.length} staking pools at block ${blockId}...`);
+
+const loadDelegatorsNumberPromises =
+    validators.map(accountId => _near.viewCall(accountId, "get_number_of_accounts", {}, blockId)
+        .then(number_of_accounts => ({account_id: accountId, number_of_accounts}))
+        .catch((e) => console.error(e))
+    );
+
+Promise.all(loadDelegatorsNumberPromises).then(async allValidatorsDetails => {
+    let validatorRequests = [];
+
+    allValidatorsDetails.map(validatorsDetails => {
+        for (let i = 0; i < validatorsDetails.number_of_accounts; i += 100) {
+            validatorRequests.push({
+                account_id: validatorsDetails.account_id,
+                from_index: i,
+                limit: 100
+            });
+        }
+    });
+
+    const {results, errors} = await PromisePool
+        .withConcurrency(3)
+        .for(validatorRequests)
+        .process(async (validatorRequest, index, pool) => {
+            const data = await _near.viewCall(validatorRequest.account_id, "get_accounts", {
+                from_index: validatorRequest.from_index,
+                limit: validatorRequest.limit
+            }, blockId).then((accounts) => {
+                console.log(`Loading ${validatorRequest.account_id} delegators: batch #${1 + validatorRequest.from_index / 100}, added ${accounts.length} accounts`)
+                return accounts;
+            });
+            return data;
+        });
+
+    if (errors.length > 0) {
+        console.log("Errors", errors);
+    }
+
+    let totalStake = 0;
+    let allDelegators = [];
+    results.map(accounts => {
+        accounts.map(account => {
+            let stakedBalance = parseFloat(new Big(account.staked_balance).div(new Big(10).pow(24)).toFixed(2));
+            if (stakedBalance > 0) {
+                totalStake += stakedBalance;
+                let balance = allDelegators[account.account_id] ?? 0;
+                allDelegators[account.account_id] = balance + stakedBalance;
             }
-            fs.writeFileSync(`stakes_${blockId}.json`, JSON.stringify(output));
-            console.log(`File ${`stakes_${blockId}.json`} has been updated`);
         });
     });
+
+    console.log("====");
+    console.log(`${Object.keys(allDelegators).length} unique delegators found. Total Staked: ${totalStake.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`);
+
+    let output = {
+        blockId, delegators: {...allDelegators}
+    }
+
+    fs.writeFileSync(`stakes_${blockId}.json`, JSON.stringify(output));
+    console.log(`File ${`stakes_${blockId}.json`} has been updated`);
+
+});
