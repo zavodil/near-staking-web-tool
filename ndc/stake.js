@@ -48,10 +48,10 @@ _near.viewCall = (contractId, methodName, args, blockHeightOrFinality) => {
     return viewCall(_near.nearArchivalConnection.provider, blockId ?? undefined, contractId, methodName, args, finality);
 };
 
-fetch("https://near.zavodil.ru/pools_all.txt")
+fetch("https://near.zavodil.ru/pools_all.txt") // <-- List of all pools to check
     .then(res => res.json())
     .then(res => {
-        console.log(`Loading ${res.data.length} nodes... at block ${blockId}`);
+        console.log(`Loading ${res.data.length} nodes at block ${blockId}...`);
         let promises = res.data.map(node => _near.viewCall(node.account_id, "get_total_staked_balance", {}, blockId)
             .then(stake => ({account_id: node.account_id, stake}))
             .catch(() => ({account_id: node.account_id, stake: 0})))
