@@ -369,20 +369,20 @@ if (queryString.startsWith("?address=")) {
 
     window.pools_table = $('#view-pools-table').DataTable({
         destroy: true,
-        pageLength: 100,
+        pageLength: 500,
         rowId: "account_id",
         sortable: true,
         columnDefs: [
             {"sorting": ["desc", "asc"], "targets": [5, 6, 7, 8, 9, 10]},
             {"sorting": ["asc", "desc"], "targets": [1, 4]},
             {
-                targets: 0, render: function (data) {
-                    return `<a data-toggle="modal" data-target="#poolModal" data-pool-id="${data}" href="#">${data}</a>`;
+                targets: 0, render: function (data, type, full, meta) {
+                    return `<a data-toggle="modal" data-target="#poolModal" data-pool-id="${full.account_id_only || data}" href="#">${data}</a>`;
                 },
             },
             {
                 targets: 4, render: function (data) {
-                    return data + " %";
+                    return data.toFixed(0) + " %";
                 },
             },
             {
@@ -393,7 +393,7 @@ if (queryString.startsWith("?address=")) {
             {
                 targets: 7, render: function (data) {
                     return `<div class="col-bar">
-                                <div class="cum-stake-number">${Number(data).toLocaleString()} &nbsp;Ⓝ</div>
+                                <div class="cum-stake-number">${Number(data).toLocaleString()}&nbsp;Ⓝ</div>
                                 <div class="cum-bar-wrapper">
                                     <div class="bar-1"></div>
                                     <div class="bar-2"></div>
@@ -430,15 +430,17 @@ if (queryString.startsWith("?address=")) {
             {data: "stake_value", visible: false, defaultContent: ""},
             {data: "status_value", visible: false, defaultContent: ""},
             {data: "stake_percent", visible: false, defaultContent: ""},
+            {data: "account_id_only",  visible: false, defaultContent: ""},
 
         ],
         ajax: {
             url: "https://near.zavodil.ru/pools_all.txt",
             dataSrc: function (json) {
-                if (json.seat_price) {
+                console.log(json);
+                //if (json.seat_price) {
                     //document.querySelector('#seat-price').classList.remove('hidden');
                     //document.querySelector('#seat-price-value').innerText = Number(json.seat_price).toLocaleString();
-                }
+                //}
 
                 let total = 0;
                 for (let i = 0; i < json.data.length; i++) {
@@ -450,6 +452,7 @@ if (queryString.startsWith("?address=")) {
                     json.data[i]["vote_value"] = Number(json.data[i]["vote"]);
                     json.data[i]["status_value"] = Number(json.data[i]["status"]);
                     json.data[i]["stake_percent"] = (Number(json.data[i]["stake"]) / total * 100).toFixed(2);
+                    json.data[i]["stake"] = json.data[i]["stake"].toFixed(0);
                 }
 
                 document.querySelector('#pools-total-num').classList.remove('hidden');
@@ -477,7 +480,7 @@ if (queryString.startsWith("?address=")) {
         },
         fnInitComplete: function () {
             connectToPoolDetailsContract().then(() => {
-                window.pool_details.get_all_fields({"from_index": 0, "limit": 100}).then((data) => {
+                window.pool_details.get_all_fields({"from_index": 0, "limit": 300}).then((data) => {
                     window.pools = [];
                     for (let pool in data) {
                         const row = window.pools_table.row(`[id="${pool}"]`);
@@ -490,8 +493,14 @@ if (queryString.startsWith("?address=")) {
                                     data[pool].url = 'http://' + data[pool].url;
                                 rowData.url = `<a href="${data[pool].url}" target="_blank"><i class="fas fa-link"></i></a>`;
                             }
-                            if (pool && (data[pool].twitter || data[pool].url || data[pool].email || data[pool].description || data[pool].country || data[pool].city))
+                            rowData.account_id_only = rowData.account_id;
+                            if (data[pool].name) {
+                                rowData.account_id = `${data[pool].name} [${rowData.account_id}]`;
+                            }
+                            if (pool && (data[pool].twitter || data[pool].url || data[pool].email || data[pool].description  || data[pool].name || data[pool].country || data[pool].city)) {
                                 rowData.info = `<a data-toggle="modal" data-target="#poolModal" data-pool-id="${pool}" href="#"><i class="fas fa-info-circle"></i></a>`;
+                            }
+
                             row.data(rowData).draw();
                         }
                         window.pools[pool] = data[pool];
@@ -1269,7 +1278,7 @@ async function connectToPoolDetailsContract() {
 
     window.walletConnection = new nearAPI.WalletConnection(window.near);
 
-    window.pool_details = await new nearAPI.Contract(window.walletConnection.account(), "name.near", {
+    window.pool_details = await new nearAPI.Contract(window.walletConnection.account(), "pool-details.near", {
         viewMethods: ['get_all_fields', 'get_num_pools'],
         changeMethods: [],
         sender: window.walletConnection.getAccountId()
