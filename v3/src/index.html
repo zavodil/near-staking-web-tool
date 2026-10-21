@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%2300EC97'/%3E%3Ctext x='50' y='65' font-size='50' text-anchor='middle' fill='%230a0a1a'%3EZ%3C/text%3E%3C/svg%3E">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- DataTables -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+    <!-- Meta -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@nearprotocol">
+    <meta name="twitter:creator" content="@zacodil">
+    <meta name="twitter:title" content="Zavodil Node - NEAR Staking">
+    <meta name="twitter:description" content="Stake NEAR with the Zavodil validator node. Connect your wallet and stake in one transaction.">
+    <meta name="twitter:image" content="https://near.zavodil.ru/preview.png">
+
+    <meta name="description" content="Stake NEAR tokens with Zavodil Node. Connect your wallet, stake in one transaction, claim an exclusive delegator NFT.">
+
+    <title>Zavodil Node - NEAR Staking</title>
+
+    <style>
+        @import "./style.css";
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <div class="gradient-orb orb-1 parallax-layer parallax-slow"></div>
+        <div class="gradient-orb orb-2 parallax-layer parallax-medium"></div>
+        <div class="gradient-orb orb-3 parallax-layer parallax-fast"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="./" class="nav-logo">
+                <span class="logo-text"><span class="logo-accent">Zavodil</span> NEAR Pool</span>
+            </a>
+
+            <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item" id="nav-main">
+                    <a class="nav-link" href="./">Home</a>
+                </li>
+                <li class="nav-item" id="nav-stake">
+                    <a class="nav-link" href="?stake" data-stake-go="stake">Stake</a>
+                </li>
+                <li class="nav-item" id="nav-nft">
+                    <a class="nav-link" href="?nft">Claim NFT</a>
+                </li>
+                <li class="nav-item" id="nav-pools">
+                    <a class="nav-link" href="?pools">All Pools</a>
+                </li>
+                <li class="nav-item nav-cta">
+                    <button type="button" class="btn btn-primary btn-sm nav-wallet" id="nav-wallet-button">
+                        <i class="fas fa-wallet"></i><span>Connect Wallet</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section (Main) -->
+    <section class="container section-main hidden" id="section-main">
+        <div class="hero">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    <span class="live-delegators-badge">Independent NEAR validator</span>
+                </div>
+
+                <h1 class="hero-title">
+                    <span class="title-line">Stake NEAR.</span>
+                    <span class="title-line gradient-text">Earn Rewards.</span>
+                </h1>
+
+                <p class="hero-subtitle">
+                    Join one of the most reliable NEAR validators.<br>
+                    <span class="highlight-fee"><span class="live-fee">1%</span> pool fee</span> · Auto-compounding · Stake straight from your wallet
+                </p>
+
+                <div class="hero-cta">
+                    <a href="?stake" class="btn btn-primary btn-lg" data-stake-go="stake">
+                        <span>Delegate Now</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="?pools" class="btn btn-secondary btn-lg">
+                        View All Pools
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="stake-mini glass-card" id="stake-mini">
+                    <div id="mini-disconnected">
+                        <h3 class="stake-mini-title">Put your NEAR to work</h3>
+                        <p class="stake-mini-text">Connect a wallet to stake or check your balance.</p>
+                        <button type="button" class="btn btn-primary btn-lg stake-full" id="mini-connect">
+                            <i class="fas fa-wallet"></i><span>Connect Wallet</span>
+                        </button>
+                    </div>
+
+                    <div id="mini-connected" class="hidden">
+                        <div class="stake-mini-head">
+                            <span class="stake-mini-label">Your stake</span>
+                            <span class="stake-mini-account" id="mini-account"></span>
+                        </div>
+                        <div class="stake-mini-amount"><span id="mini-staked">…</span> <small>NEAR</small></div>
+                        <div class="stake-mini-sub" id="mini-sub">Loading balance…</div>
+
+                        <div class="stake-mini-actions">
+                            <button type="button" class="btn btn-primary" data-stake-go="stake">
+                                <i class="fas fa-plus"></i><span>Stake</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary" data-stake-go="unstake">
+                                <i class="fas fa-minus"></i><span>Unstake</span>
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-secondary stake-full hidden" id="mini-withdraw" data-stake-go="withdraw">
+                            <i class="fas fa-download"></i><span>Withdraw <span id="mini-withdraw-amount"></span> NEAR</span>
+                        </button>
+
+                        <div class="stake-mini-foot">
+                            <code>zavodil.poolv1.near</code> · <span class="live-fee">1%</span> fee
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="stat-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value live-staked">Loading...</span>
+                    <span class="stat-label">Total Staked</span>
+                </div>
+            </div>
+
+            <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value live-delegators">Loading...</span>
+                    <span class="stat-label">Delegators</span>
+                </div>
+            </div>
+
+            <div class="stat-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="stat-icon">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value">99.999%</span>
+                    <span class="stat-label">Uptime</span>
+                </div>
+            </div>
+
+            <div class="stat-card" data-aos="fade-up" data-aos-delay="400">
+                <div class="stat-icon">
+                    <i class="fas fa-percent"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value live-fee">Loading...</span>
+                    <span class="stat-label">Pool Fee</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="features-section">
+            <h2 class="section-title">Why Stake With Us</h2>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>High Performance</h3>
+                    <p>3 nodes across Germany, Austria & Finland ensure maximum uptime and fast block production.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-hand-holding-dollar"></i>
+                    </div>
+                    <h3>Low Fee</h3>
+                    <p>The pool takes a <span class="live-fee">1%</span> service fee, read live from the pool contract. More rewards stay in your pocket.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-rotate"></i>
+                    </div>
+                    <h3>Auto-Compound</h3>
+                    <p>Self-ping on every epoch maximizes your compounding returns automatically.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                    <h3>Exclusive NFT</h3>
+                    <p>Claim your unique delegator NFT badge. All holders participate in token giveaways.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-scale-balanced"></i>
+                    </div>
+                    <h3>Independent</h3>
+                    <p>No whales, no corporate affiliations. True decentralization with community-first approach.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>NEAR Contributor</h3>
+                    <p>Built the official wallet staking UI and essential tooling. Early NEAR supporter.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stake Section -->
+    <section class="container section-stake hidden" id="section-stake">
+        <div class="stake-page-header">
+            <h1 class="section-title">Stake with <span class="gradient-text">Zavodil</span></h1>
+        </div>
+
+        <div class="stake-page">
+            <div class="stake-page-main">
+                    <div class="stake-card glass-card" id="stake">
+                        <div class="stake-card-header">
+                            <h3>Stake NEAR</h3>
+                            <code>zavodil.poolv1.near</code>
+                        </div>
+
+                        <div id="stake-disconnected">
+                            <p class="stake-intro">Connect a NEAR wallet (HOT, Meteor, Intear, MyNearWallet, Nightly and others) to stake, unstake and withdraw directly.</p>
+                            <button type="button" class="btn btn-primary btn-lg stake-full" id="stake-connect">
+                                <i class="fas fa-wallet"></i><span>Connect Wallet</span>
+                            </button>
+                        </div>
+
+                        <div id="stake-connected" class="hidden">
+                            <div class="stake-account-row">
+                                <span class="stake-account" id="stake-account"></span>
+                                <button type="button" class="stake-link" id="stake-disconnect">Disconnect</button>
+                            </div>
+
+                            <div class="stake-balances">
+                                <div class="stake-balance-row"><span>Available</span><strong><span id="stake-available">…</span> NEAR</strong></div>
+                                <div class="stake-balance-row"><span>Staked with Zavodil</span><strong><span id="stake-staked">…</span> NEAR</strong></div>
+                                <div class="stake-balance-row hidden" id="stake-unstaked-row"><span>Unstaked <small id="stake-unstaked-note"></small></span><strong><span id="stake-unstaked">…</span> NEAR</strong></div>
+                            </div>
+
+                            <div class="stake-tabs">
+                                <button type="button" class="stake-tab active" data-mode="stake">Stake</button>
+                                <button type="button" class="stake-tab" data-mode="unstake">Unstake</button>
+                            </div>
+
+                            <div class="input-group stake-input-group">
+                                <input type="text" inputmode="decimal" autocomplete="off" id="stake-amount" class="input-field" placeholder="0.0">
+                                <button type="button" class="btn btn-secondary" id="stake-max">MAX</button>
+                            </div>
+
+                            <button type="button" class="btn btn-primary btn-lg stake-full" id="stake-submit">
+                                <span id="stake-submit-label">Stake</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary stake-full hidden" id="stake-withdraw">
+                                <i class="fas fa-download"></i><span>Withdraw unstaked</span>
+                            </button>
+
+                            <div class="hint" id="stake-hint"></div>
+                        </div>
+
+                        <div class="alert hidden" id="stake-status"></div>
+                    </div>
+            </div>
+
+            <aside class="stake-page-side glass-card">
+                <h3>Pool</h3>
+                <div class="stake-balance-row"><span>Validator</span><code>zavodil.poolv1.near</code></div>
+                <div class="stake-balance-row"><span>Pool fee</span><strong class="live-fee">…</strong></div>
+                <div class="stake-balance-row"><span>Total staked</span><strong class="live-staked">…</strong></div>
+                <div class="stake-balance-row"><span>Delegators</span><strong class="live-delegators">…</strong></div>
+
+                <ul class="stake-notes">
+                    <li><i class="fas fa-rotate"></i>Rewards are added every epoch (~12 hours) and compound automatically.</li>
+                    <li><i class="fas fa-hourglass-half"></i>Unstaked NEAR can be withdrawn after 4 epochs (~2–3 days).</li>
+                    <li><i class="fas fa-chart-line"></i>No fixed APY: rewards depend on network inflation and total stake.</li>
+                </ul>
+            </aside>
+        </div>
+    </section>
+
+    <!-- NFT Section -->
+    <section class="container section-nft hidden" id="section-nft">
+        <div class="nft-hero">
+            <div class="nft-badge">
+                <i class="fas fa-gift"></i>
+                Exclusive Reward
+            </div>
+            <h1 class="section-title">Claim Your <span class="gradient-text">Delegator NFT</span></h1>
+            <p class="section-subtitle">
+                Stake with Zavodil node and claim your unique NFT badge.
+                All NFT holders participate in exclusive token giveaways.
+            </p>
+        </div>
+
+        <div class="nft-card-container">
+            <div class="nft-card glass-card">
+                <div class="nft-form">
+                    <label class="input-label">Your NEAR Account</label>
+                    <div class="input-group">
+                        <input type="text" id="nft-account-id" class="input-field" placeholder="yourname.near">
+                        <button type="button" id="nft-check-button" class="btn btn-primary">
+                            <span>Check</span>
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="nft-check-lockup">
+                        <span class="checkbox-custom"></span>
+                        Check lockup account
+                    </label>
+                </div>
+
+                <div class="nft-loading hidden" id="nft-check-loading">
+                    <div class="spinner"></div>
+                    <span>Checking account...</span>
+                </div>
+
+                <div class="alert alert-error hidden" id="check-nft-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Account not found</span>
+                </div>
+
+                <div class="nft-result nft-result-warning hidden" id="check-nft-staking-not-found">
+                    <div class="nft-result-icon"><i class="fas fa-circle-info"></i></div>
+                    <h3 class="nft-result-title">No stake found</h3>
+                    <p class="nft-result-text">This account has nothing staked with <code>zavodil.poolv1.near</code>. Stake any amount to become eligible.</p>
+                    <a href="?stake" class="btn btn-primary btn-lg nft-result-btn" data-stake-go="stake">
+                        <span>Delegate Now</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="nft-result nft-result-success hidden" id="check-nft-exists">
+                    <div class="nft-result-icon"><i class="fas fa-check"></i></div>
+                    <h3 class="nft-result-title">NFT already claimed</h3>
+                    <div id="check-nft-exists-media" class="nft-media"></div>
+                    <div id="my-nft-twit" class="nft-share"></div>
+                </div>
+
+                <div class="nft-result nft-result-success hidden" id="check-nft-staking-found">
+                    <div class="nft-result-icon"><i class="fas fa-star"></i></div>
+                    <h3 class="nft-result-title">You're eligible!</h3>
+                    <p class="nft-result-text" id="nft-eligible-text">Your stake qualifies for a delegator NFT.</p>
+                    <button type="button" id="nft-claim-button" class="btn btn-primary btn-lg nft-result-btn">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <span>Claim NFT</span>
+                    </button>
+                    <div id="nft-claim-hint" class="nft-claim-hint"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="nft-info">
+            <p>Follow <a href="https://twitter.com/zacodil" target="_blank">@zacodil</a> for giveaway announcements</p>
+        </div>
+    </section>
+
+    <!-- Pools Section -->
+    <section class="container section-pools hidden" id="section-pools">
+        <div class="pools-header">
+            <h1 class="section-title">NEAR <span class="gradient-text">Staking Pools</span></h1>
+            <p class="section-subtitle">
+                Compare all validators and choose the best for your needs.
+                Data updated in real-time from the blockchain.
+            </p>
+        </div>
+
+        <div class="pools-table-container glass-card">
+            <table id="view-pools-table" class="pools-table">
+                <thead>
+                    <tr>
+                        <th>Pool</th>
+                        <th></th>
+                        <th>Fee</th>
+                        <th>Delegators</th>
+                        <th>Stake</th>
+                        <th></th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr>
+                        <th>Total</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="pools-footer">
+            <div class="pools-stats">
+                <div id="pools-total-num" class="hidden">
+                    Total pools: <span id="pools-total-num-value"></span>
+                </div>
+                <div id="seat-price" class="hidden">
+                    Seat price: <span id="seat-price-value"></span> NEAR
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pool Modal -->
+    <div class="modal-overlay hidden" id="poolModal">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3 class="modal-title"></h3>
+                <button class="modal-close" data-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div id="block-explorer-container" class="modal-row">
+                    <span class="modal-label">Block Explorer:</span>
+                    <span id="block-explorer"></span>
+                </div>
+
+                <div id="pool-found">
+                    <div id="pool-url" class="modal-row">
+                        <span class="modal-label">Website:</span>
+                        <span id="pool-url-value"></span>
+                    </div>
+                    <div id="pool-twitter" class="modal-row">
+                        <span class="modal-label">Twitter:</span>
+                        <span id="pool-twitter-value"></span>
+                    </div>
+                    <div id="pool-email" class="modal-row">
+                        <span class="modal-label">Email:</span>
+                        <span id="pool-email-value"></span>
+                    </div>
+                    <div id="pool-discord" class="modal-row">
+                        <span class="modal-label">Discord:</span>
+                        <span id="pool-discord-value"></span>
+                    </div>
+                    <div id="pool-country" class="modal-row">
+                        <span class="modal-label">Country:</span>
+                        <span id="pool-country-value"></span>
+                    </div>
+                    <div id="pool-city" class="modal-row">
+                        <span class="modal-label">City:</span>
+                        <span id="pool-city-value"></span>
+                    </div>
+                    <div id="pool-description" class="modal-row modal-description">
+                        <span class="modal-label">Description:</span>
+                        <p id="pool-description-value"></p>
+                    </div>
+                </div>
+
+                <div id="pool-not-found" class="hidden">
+                    <p>Pool details not found. Operators can fill details using
+                        <a href="https://near.social/#/zavodil.near/widget/add-pool-details" target="_blank">NEAR.social widget</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <a href="./" class="footer-logo">
+                        <span class="logo-icon">Z</span>
+                        <span class="logo-text">Zavodil Node</span>
+                    </a>
+                    <p>Open source tools for decentralized NEAR community</p>
+                    <div class="footer-social">
+                        <a href="https://twitter.com/zacodil" target="_blank" aria-label="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://github.com/zavodil/near-staking-web-tool" target="_blank" aria-label="GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://t.me/near_protocol" target="_blank" aria-label="Telegram">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="footer-bottom">
+                <span>#FutureIsNEAR</span>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import "./main.js";
+    </script>
+
+    <script>
+        // Mobile nav toggle
+        document.getElementById('nav-toggle').addEventListener('click', function() {
+            document.getElementById('nav-menu').classList.toggle('active');
+            this.classList.toggle('active');
+        });
+
+        // Modal close
+        document.querySelectorAll('[data-dismiss="modal"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('poolModal').classList.add('hidden');
+            });
+        });
+
+        document.getElementById('poolModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
